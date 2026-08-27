@@ -399,7 +399,7 @@ export function CalendarScheduler({
           <div className="calendar-month-card glass-card">
             <div className="weekdays-grid">
               {['일 (Sun)', '월 (Mon)', '화 (Tue)', '수 (Wed)', '목 (Thu)', '금 (Fri)', '토 (Sat)'].map((day, idx) => (
-                <div key={idx} className={`weekday-label ${idx === 0 ? 'text-rose' : idx === 6 ? 'text-cyan' : ''}`}>
+                <div key={idx} className={`weekday-label ${idx === 0 || idx === 6 ? 'text-rose font-bold' : ''}`}>
                   {day}
                 </div>
               ))}
@@ -410,6 +410,7 @@ export function CalendarScheduler({
                 const dayEvents = filteredEvents.filter(e => e.date === cell.dateStr);
                 const isSelected = cell.dateStr === selectedDate;
                 const isToday = cell.dateStr === "2026-08-26";
+                const isWeekend = idx % 7 === 0 || idx % 7 === 6;
 
                 return (
                   <div
@@ -418,7 +419,7 @@ export function CalendarScheduler({
                     onClick={() => setSelectedDate(cell.dateStr)}
                   >
                     <div className="day-cell-top">
-                      <span className={`day-number mono ${isToday ? 'today-badge' : ''}`}>
+                      <span className={`day-number mono ${isToday ? 'today-badge' : ''} ${isWeekend && !isToday && !isSelected ? 'text-rose font-bold' : ''}`}>
                         {cell.dayNum}
                       </span>
                       {dayEvents.length > 0 && (

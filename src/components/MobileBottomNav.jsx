@@ -1,8 +1,8 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
-  Calendar, 
-  CheckSquare, 
+  CalendarDays, 
+  Activity, 
   TrendingUp, 
   Headphones, 
   Bot
@@ -11,10 +11,10 @@ import {
 export function MobileBottomNav({ activeTab, onSelectTab }) {
   const navItems = [
     { id: 'dashboard', label: '홈', icon: LayoutDashboard },
-    { id: 'calendar', label: '캘린더', icon: Calendar },
-    { id: 'life', label: '라이프', icon: CheckSquare },
+    { id: 'calendar', label: '캘린더', icon: CalendarDays },
+    { id: 'life', label: '라이프', icon: Activity },
     { id: 'market', label: '금융/마켓', icon: TrendingUp },
-    { id: 'sound', label: '딥워크', icon: Headphones },
+    { id: 'soundscape', label: '딥워크', icon: Headphones },
     { id: 'rag', label: 'AI 검색', icon: Bot }
   ];
 

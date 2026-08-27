@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Terminal, 
   Flame, 
   Volume2, 
   VolumeX, 
@@ -10,10 +9,16 @@ import {
   Clock, 
   ShieldCheck, 
   TrendingUp, 
-  Sparkles,
-  Zap,
-  RotateCw,
-  Cloud
+  Sparkles, 
+  Zap, 
+  RotateCw, 
+  Cloud,
+  LayoutDashboard,
+  CalendarDays,
+  Activity,
+  Bot,
+  BookOpenCheck,
+  Terminal
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -71,25 +76,13 @@ export function Header({
     return () => clearInterval(interval);
   }, []);
 
-  const toggleAmbientQuick = () => {
-    if (ambientPlaying) {
-      stopBinauralBeats();
-      stopAmbientNoise();
-      setAmbientPlaying(false);
-    } else {
-      startAmbientNoise(0.18);
-      startBinauralBeats(0.12);
-      setAmbientPlaying(true);
-    }
-  };
-
   return (
     <header className="header-container">
       {/* Top Main Navigation Bar */}
       <div className="header-top">
         <div className="header-brand">
-          <div className="brand-logo-glow">
-            <Terminal size={22} className="text-cyan" />
+          <div className="brand-logo-glow" style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.2))', border: '1px solid rgba(0, 240, 255, 0.4)' }}>
+            <Zap size={20} className="text-cyan" />
           </div>
           <div>
             <div className="brand-title">
@@ -204,55 +197,55 @@ export function Header({
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Navigation Tabs with Modern Icons */}
       <nav className="header-nav-tabs">
         <button 
           className={`nav-tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
-          <TrendingUp size={16} />
+          <LayoutDashboard size={15} />
           <span>통합 대시보드</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'calendar' ? 'active' : ''}`}
           onClick={() => setActiveTab('calendar')}
         >
-          <Clock size={16} />
+          <CalendarDays size={15} />
           <span>캘린더 & 일정</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'life' ? 'active' : ''}`}
           onClick={() => setActiveTab('life')}
         >
-          <ShieldCheck size={16} />
+          <Activity size={15} />
           <span>생활 관리 (Daily & Diet)</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'market' ? 'active' : ''}`}
           onClick={() => setActiveTab('market')}
         >
-          <TrendingUp size={16} />
+          <TrendingUp size={15} />
           <span>주식 & 매크로 인텔리전스</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
           onClick={() => setActiveTab('rag')}
         >
-          <Sparkles size={16} />
+          <Bot size={15} />
           <span>RAG 지식 질의 & AI</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'knowledge' ? 'active' : ''}`}
           onClick={() => setActiveTab('knowledge')}
         >
-          <Terminal size={16} />
+          <BookOpenCheck size={15} />
           <span>PubMed & GitHub 큐레이션</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'soundscape' ? 'active' : ''}`}
           onClick={() => setActiveTab('soundscape')}
         >
-          <Headphones size={16} />
+          <Headphones size={15} />
           <span>딥워크 포모도로 & 사운드</span>
         </button>
       </nav>

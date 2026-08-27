@@ -276,7 +276,7 @@ export function DashboardCalendarWidget({
           {/* Weekday Row */}
           <div className="mini-weekdays-grid">
             {weekdaysShort.map((w, idx) => (
-              <span key={idx} className={`mini-weekday-label ${idx === 0 ? 'text-rose' : idx === 6 ? 'text-cyan' : ''}`}>
+              <span key={idx} className={`mini-weekday-label ${idx === 0 || idx === 6 ? 'text-rose font-bold' : ''}`}>
                 {w}
               </span>
             ))}
@@ -289,6 +289,7 @@ export function DashboardCalendarWidget({
               const isToday = item.dateStr === todayDateStr;
               const isSelected = item.dateStr === selectedDate;
               const hasEvents = dayEvts.length > 0;
+              const isWeekend = idx % 7 === 0 || idx % 7 === 6;
 
               return (
                 <div
@@ -297,7 +298,7 @@ export function DashboardCalendarWidget({
                   onClick={() => setSelectedDate(item.dateStr)}
                   title={`${item.dateStr}: ${dayEvts.length}건 일정`}
                 >
-                  <span className="mini-day-num mono">{item.day}</span>
+                  <span className={`mini-day-num mono ${isWeekend && !isToday && !isSelected ? 'text-rose font-bold' : ''}`}>{item.day}</span>
                   {hasEvents && (
                     <div className="mini-event-dots">
                       {dayEvts.slice(0, 3).map((_, i) => (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  Calendar as CalendarIcon, 
+  CalendarDays, 
   Plus, 
   CheckCircle2, 
   Circle, 
@@ -9,7 +9,7 @@ import {
   TrendingDown, 
   Flame, 
   Utensils, 
-  BookOpen, 
+  BookOpenCheck, 
   Search, 
   ChevronLeft, 
   ChevronRight, 
@@ -18,9 +18,14 @@ import {
   Activity,
   Check,
   Droplets,
-  Tag
+  Tag,
+  Building2,
+  FileSpreadsheet,
+  Globe2,
+  ArrowUpRight
 } from 'lucide-react';
 import { PUBMED_PAPERS_DB } from '../data/pubmedDatabase';
+import { KOREA_STOCKS_CORP_MAP, DART_DISCLOSURES_CACHE, DART_API_KEY } from '../services/dartService';
 
 export function DashboardCockpit({
   calendarEvents = [],
@@ -136,8 +141,10 @@ export function DashboardCockpit({
   const goalFat = 65;
 
   // -------------------------------------------------------------
-  // 3. Stocks & Market Intelligence Mini Data
+  // 3. Stocks, DART Intelligence & Market State
   // -------------------------------------------------------------
+  const [stockViewTab, setStockViewTab] = useState('global'); // 'global' or 'dart'
+
   const stockIndices = [
     { name: 'S&P 500', value: '5,892.40', change: '+1.24%', isUp: true },
     { name: 'KOSPI', value: '2,685.12', change: '-0.38%', isUp: false }
@@ -183,7 +190,7 @@ export function DashboardCockpit({
         <div className="cockpit-card-header">
           <div className="cockpit-title-group">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
-              <CalendarIcon size={16} />
+              <CalendarDays size={15} />
             </div>
             <h4>캘린더 <span className="text-muted text-xs font-normal">(Calendar)</span></h4>
           </div>
@@ -248,24 +255,25 @@ export function DashboardCockpit({
         <div className="cockpit-split-columns">
           {/* Left: Mini Month Calendar Grid */}
           <div className="cockpit-col-left cockpit-mini-cal-wrapper">
-            {/* Weekdays Grid (Strict 7 columns) */}
+            {/* Weekdays Grid: 토요일 & 일요일 빨간색 (Red) */}
             <div className="cockpit-weekdays-row">
-              <span style={{ color: 'var(--rose-primary)' }}>일</span>
+              <span style={{ color: 'var(--rose-primary)', fontWeight: 'bold' }}>일</span>
               <span>월</span>
               <span>화</span>
               <span>수</span>
               <span>목</span>
               <span>금</span>
-              <span style={{ color: 'var(--cyan-primary)' }}>토</span>
+              <span style={{ color: 'var(--rose-primary)', fontWeight: 'bold' }}>토</span>
             </div>
             
-            {/* Days Grid (Strict 7 columns) */}
+            {/* Days Grid: 토요일 & 일요일 날짜 빨간색 (Red) */}
             <div className="cockpit-days-grid">
               {miniDays.map((item, idx) => {
                 const dayEvents = calendarEvents.filter(e => e.date === item.dateStr);
                 const isToday = item.dateStr === todayDateStr;
                 const isSelected = item.dateStr === selectedDate;
                 const hasEvents = dayEvents.length > 0;
+                const isWeekend = idx % 7 === 0 || idx % 7 === 6; // Sunday or Saturday
 
                 return (
                   <div
@@ -273,7 +281,23 @@ export function DashboardCockpit({
                     className={`cockpit-day-tile ${item.isCurrentMonth ? 'current-month' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => setSelectedDate(item.dateStr)}
                   >
-                    <span className="mono">{item.day}</span>
+                    <span 
+                      className="mono"
+                      style={{
+                        color: isSelected 
+                          ? '#fff' 
+                          : isToday 
+                            ? '#d8b4fe' 
+                            : isWeekend && item.isCurrentMonth
+                              ? 'var(--rose-primary)' 
+                              : isWeekend && !item.isCurrentMonth
+                                ? 'rgba(244, 63, 94, 0.4)'
+                                : undefined,
+                        fontWeight: isWeekend || isToday || isSelected ? 'bold' : 'normal'
+                      }}
+                    >
+                      {item.day}
+                    </span>
                     {hasEvents && !isSelected && (
                       <span className="cockpit-event-dot"></span>
                     )}
@@ -297,11 +321,11 @@ export function DashboardCockpit({
 
               <div className="cockpit-agenda-list">
                 {activeEventList.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+                  <div style={{ textAlign: 'center', padding: '14px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
                     <p className="text-muted text-xs" style={{ margin: 0 }}>등록된 일정이 없습니다.</p>
                     <button 
                       className="btn btn-secondary btn-xs"
-                      style={{ marginTop: '8px' }}
+                      style={{ marginTop: '6px' }}
                       onClick={() => setShowQuickEventModal(true)}
                     >
                       + 일정 추가
@@ -354,13 +378,13 @@ export function DashboardCockpit({
         <div className="cockpit-card-header">
           <div className="cockpit-title-group">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(0, 240, 255, 0.1)', borderColor: 'rgba(0, 240, 255, 0.3)', color: 'var(--cyan-primary)' }}>
-              <Activity size={16} />
+              <Activity size={15} />
             </div>
             <h4>생활관리 <span className="text-muted text-xs font-normal">(Life Management)</span></h4>
           </div>
 
           <div className="cockpit-header-actions">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '999px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '999px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
               <Flame size={12} className="text-amber" />
               <span className="mono text-xs font-bold text-amber">{userProfile?.streak || 12}일 연속</span>
             </div>
@@ -405,11 +429,11 @@ export function DashboardCockpit({
 
             <div className="cockpit-routines-stack">
               {routines.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+                <div style={{ textAlign: 'center', padding: '14px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
                   <p className="text-muted text-xs" style={{ margin: 0 }}>등록된 데일리 루틴이 없습니다.</p>
                   <button 
                     className="btn btn-secondary btn-xs"
-                    style={{ marginTop: '8px' }}
+                    style={{ marginTop: '6px' }}
                     onClick={() => setShowRoutineAdd(true)}
                   >
                     + 루틴 등록
@@ -447,7 +471,7 @@ export function DashboardCockpit({
                 <Utensils size={13} className="text-cyan" />
               </div>
 
-              <div style={{ marginTop: '6px' }}>
+              <div style={{ marginTop: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                   <span className="mono text-lg font-extrabold text-cyan">{totalKcal}</span>
                   <span className="mono text-2xs text-muted">/ {goalKcal} kcal</span>
@@ -460,7 +484,7 @@ export function DashboardCockpit({
               </div>
 
               {/* Nutrients Macro Bars */}
-              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                     <span className="text-muted">탄수화물</span>
@@ -505,93 +529,170 @@ export function DashboardCockpit({
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. BOTTOM-LEFT: 주식 (Stocks) & 마켓 인텔리전스                           */}
+      {/* 3. BOTTOM-LEFT: 주식 (Stocks) & Open DART 전자공시 인텔리전스           */}
       {/* ========================================================================= */}
       <div className="cockpit-card">
         {/* Header */}
         <div className="cockpit-card-header">
           <div className="cockpit-title-group">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: 'var(--emerald-primary)' }}>
-              <TrendingUp size={16} />
+              <TrendingUp size={15} />
             </div>
-            <h4>주식 <span className="text-muted text-xs font-normal">(Stocks) & 마켓</span></h4>
+            <h4>주식 <span className="text-muted text-xs font-normal">(Stocks) & DART 공시</span></h4>
           </div>
 
           <div className="cockpit-header-actions">
+            {/* View Switcher: Global vs DART Korea */}
+            <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
+              <button
+                className={`btn-xs ${stockViewTab === 'global' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}
+                onClick={() => setStockViewTab('global')}
+              >
+                글로벌/미장
+              </button>
+              <button
+                className={`btn-xs ${stockViewTab === 'dart' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}
+                onClick={() => setStockViewTab('dart')}
+              >
+                🇰🇷 DART 공시
+              </button>
+            </div>
+
             <button 
               className="btn btn-secondary btn-xs"
               onClick={() => onNavigateTab('market')}
             >
               <Plus size={12} />
-              <span>종목 추가</span>
+              <span>종목</span>
             </button>
           </div>
         </div>
 
-        {/* 2-Column Split: Indices & Watchlist + Market News */}
+        {/* 2-Column Split: Indices & Watchlist + Market News / DART Disclosures */}
         <div className="cockpit-split-columns split-stocks">
-          {/* Left: Major Indices & Watchlist */}
+          {/* Left: Major Indices & Watchlist / DART Domestic Stocks */}
           <div className="cockpit-col-left">
-            {/* Top 2 Index Mini Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {stockIndices.map((idxItem, i) => (
-                <div key={i} className="cockpit-index-mini-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-                    <span className="text-muted font-bold">{idxItem.name}</span>
-                    <span className={`mono font-bold ${idxItem.isUp ? 'text-emerald' : 'text-rose'}`}>
-                      {idxItem.change}
-                    </span>
-                  </div>
-                  <div className="mono text-sm font-extrabold text-highlight" style={{ marginTop: '4px' }}>
-                    {idxItem.value}
-                  </div>
+            {stockViewTab === 'global' ? (
+              <>
+                {/* Top 2 Index Mini Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {stockIndices.map((idxItem, i) => (
+                    <div key={i} className="cockpit-index-mini-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                        <span className="text-muted font-bold">{idxItem.name}</span>
+                        <span className={`mono font-bold ${idxItem.isUp ? 'text-emerald' : 'text-rose'}`}>
+                          {idxItem.change}
+                        </span>
+                      </div>
+                      <div className="mono text-sm font-extrabold text-highlight" style={{ marginTop: '4px' }}>
+                        {idxItem.value}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* Watchlist Table (Optimized Compact Stack) */}
-            <div className="cockpit-watchlist-stack" style={{ marginTop: '6px' }}>
-              {portfolioWatchlist.map((item, i) => (
-                <div key={i} className="cockpit-watchlist-row">
-                  <span className="text-xs font-medium text-highlight">{item.name}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="mono text-xs font-bold text-highlight">{item.price}</span>
-                    <span className={`mono text-2xs font-bold ${item.isUp ? 'text-emerald' : 'text-rose'}`}>
-                      {item.change}
-                    </span>
-                  </div>
+                {/* Watchlist Table */}
+                <div className="cockpit-watchlist-stack" style={{ marginTop: '4px' }}>
+                  {portfolioWatchlist.map((item, i) => (
+                    <div key={i} className="cockpit-watchlist-row">
+                      <span className="text-xs font-medium text-highlight">{item.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="mono text-xs font-bold text-highlight">{item.price}</span>
+                        <span className={`mono text-2xs font-bold ${item.isUp ? 'text-emerald' : 'text-rose'}`}>
+                          {item.change}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              /* DART Korea Stock Grid */
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span className="text-xs font-bold text-cyan">DART 국내 상장사</span>
+                  <span className="badge badge-emerald text-2xs" title={`Open DART Key: ${DART_API_KEY.substring(0, 8)}...`}>API 연동 🟢</span>
+                </div>
+                <div className="cockpit-watchlist-stack" style={{ marginTop: '0', gap: '6px' }}>
+                  {KOREA_STOCKS_CORP_MAP.slice(0, 4).map((stock, i) => (
+                    <div key={i} className="cockpit-watchlist-row">
+                      <div>
+                        <span className="text-xs font-bold text-highlight">{stock.name}</span>
+                        <span className="mono text-2xs text-muted ml-1">({stock.stockCode})</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="mono text-xs font-bold text-highlight">{stock.currentPrice}</span>
+                        <span className={`mono text-2xs font-bold ${stock.isUp ? 'text-emerald' : 'text-rose'}`}>
+                          {stock.change}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Right: Today's Market News & Macro Briefing */}
+          {/* Right: Today's Market News or DART Disclosures */}
           <div className="cockpit-col-right">
-            <div>
-              <div className="cockpit-section-subhead">
-                <span className="text-xs font-bold text-highlight">오늘의 마켓 뉴스 & 매크로</span>
-                <span className="badge badge-purple text-2xs">실시간</span>
-              </div>
+            {stockViewTab === 'global' ? (
+              <div>
+                <div className="cockpit-section-subhead">
+                  <span className="text-xs font-bold text-highlight">오늘의 마켓 뉴스 & 매크로</span>
+                  <span className="badge badge-purple text-2xs">실시간</span>
+                </div>
 
-              <div className="cockpit-news-stack">
-                {marketHeadlines.map((news, i) => (
-                  <div key={i} className="cockpit-news-item">
-                    <p className="text-xs text-highlight font-medium leading-snug" style={{ margin: 0 }}>
-                      {news.title}
-                    </p>
-                    <span className="text-2xs text-muted mono" style={{ display: 'inline-block', marginTop: '4px' }}>
-                      {news.time}
-                    </span>
-                  </div>
-                ))}
+                <div className="cockpit-news-stack">
+                  {marketHeadlines.map((news, i) => (
+                    <div key={i} className="cockpit-news-item">
+                      <p className="text-xs text-highlight font-medium leading-snug" style={{ margin: 0 }}>
+                        {news.title}
+                      </p>
+                      <span className="text-2xs text-muted mono" style={{ display: 'inline-block', marginTop: '4px' }}>
+                        {news.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <div className="cockpit-section-subhead">
+                  <span className="text-xs font-bold text-highlight">DART 최신 전자공시</span>
+                  <span className="badge badge-cyan text-2xs">금감원 Open DART</span>
+                </div>
+
+                <div className="cockpit-news-stack">
+                  {DART_DISCLOSURES_CACHE.slice(0, 2).map((disc, i) => (
+                    <div 
+                      key={i} 
+                      className="cockpit-news-item"
+                      onClick={() => window.open(disc.url, '_blank')}
+                      title="클릭 시 DART 전자공시 원문 확인"
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                        <span className="badge badge-purple text-2xs font-bold">{disc.corp_name}</span>
+                        <span className="mono text-2xs text-muted">{disc.rcept_dt}</span>
+                      </div>
+                      <p className="text-xs text-highlight font-medium leading-snug" style={{ margin: 0 }}>
+                        {disc.report_nm}
+                      </p>
+                      <p className="text-2xs text-cyan" style={{ margin: '2px 0 0 0', lineHeight: '1.3' }}>
+                        {disc.summary}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button 
               className="cockpit-link-btn"
               onClick={() => onNavigateTab('market')}
             >
-              <span>마켓 인텔리전스 전체보기</span>
+              <span>{stockViewTab === 'global' ? '마켓 인텔리전스 전체보기' : 'DART 전자공시 전체보기'}</span>
               <ArrowRight size={12} />
             </button>
           </div>
@@ -606,7 +707,7 @@ export function DashboardCockpit({
         <div className="cockpit-card-header">
           <div className="cockpit-title-group">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
-              <BookOpen size={16} />
+              <BookOpenCheck size={15} />
             </div>
             <h4>PubMed 논문 <span className="text-muted text-xs font-normal">& 리서치</span></h4>
           </div>
@@ -674,7 +775,7 @@ export function DashboardCockpit({
               </div>
 
               {/* Recommended Search Keywords Pill Box */}
-              <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ marginTop: '8px', padding: '6px 8px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   <Tag size={10} />
                   <span>오늘의 추천 키워드</span>
@@ -688,17 +789,17 @@ export function DashboardCockpit({
               </div>
             </div>
 
-            <div style={{ padding: '10px 12px', borderRadius: '10px', textAlign: 'center', background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+            <div style={{ padding: '8px 10px', borderRadius: '8px', textAlign: 'center', background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
               <p className="text-xs font-bold text-highlight" style={{ margin: 0 }}>PubMed Search Hub</p>
               <p className="text-2xs text-muted" style={{ margin: '2px 0 0 0' }}>
-                원하는 학술 논문을 실시간 색인하고 옵시디언으로 동기화하세요.
+                원하는 학술 논문을 실시간 색인하고 동기화하세요.
               </p>
               <button 
-                className="btn btn-primary btn-xs mt-2"
+                className="btn btn-primary btn-xs mt-1"
                 style={{ width: '100%', fontWeight: 'bold' }}
                 onClick={() => onNavigateTab('pubmed')}
               >
-                <Search size={12} />
+                <Search size={11} />
                 <span>논문 허브 이동</span>
               </button>
             </div>
