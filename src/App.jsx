@@ -60,7 +60,8 @@ import {
   Headphones,
   Sliders,
   DollarSign,
-  Clock
+  Clock,
+  Calendar
 } from 'lucide-react';
 
 import './App.css';
