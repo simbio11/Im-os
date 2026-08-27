@@ -16,7 +16,9 @@ import {
   ArrowRight, 
   Sparkles,
   Activity,
-  Check
+  Check,
+  Droplets,
+  Tag
 } from 'lucide-react';
 import { PUBMED_PAPERS_DB } from '../data/pubmedDatabase';
 
@@ -134,7 +136,7 @@ export function DashboardCockpit({
   const goalFat = 65;
 
   // -------------------------------------------------------------
-  // 3. Stocks & Market Intelligence Mini Mock Data
+  // 3. Stocks & Market Intelligence Mini Data
   // -------------------------------------------------------------
   const stockIndices = [
     { name: 'S&P 500', value: '5,892.40', change: '+1.24%', isUp: true },
@@ -162,7 +164,7 @@ export function DashboardCockpit({
 
   const pubmedTopicTags = [
     'Neuroscience',
-    'Aging',
+    'Aging & Longevity',
     'AI & Bio',
     'Medicine',
     'Metabolism',
@@ -295,14 +297,14 @@ export function DashboardCockpit({
 
               <div className="cockpit-agenda-list">
                 {activeEventList.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '10px' }}>
-                    <p className="text-muted text-xs">등록된 일정이 없습니다.</p>
+                  <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+                    <p className="text-muted text-xs" style={{ margin: 0 }}>등록된 일정이 없습니다.</p>
                     <button 
                       className="btn btn-secondary btn-xs"
                       style={{ marginTop: '8px' }}
                       onClick={() => setShowQuickEventModal(true)}
                     >
-                      + 일정 등록
+                      + 일정 추가
                     </button>
                   </div>
                 ) : (
@@ -403,8 +405,8 @@ export function DashboardCockpit({
 
             <div className="cockpit-routines-stack">
               {routines.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '10px' }}>
-                  <p className="text-muted text-xs">등록된 데일리 루틴이 없습니다.</p>
+                <div style={{ textAlign: 'center', padding: '16px 8px', border: '1px dashed var(--border-subtle)', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.01)' }}>
+                  <p className="text-muted text-xs" style={{ margin: 0 }}>등록된 데일리 루틴이 없습니다.</p>
                   <button 
                     className="btn btn-secondary btn-xs"
                     style={{ marginTop: '8px' }}
@@ -414,7 +416,7 @@ export function DashboardCockpit({
                   </button>
                 </div>
               ) : (
-                routines.slice(0, 6).map(routine => (
+                routines.slice(0, 5).map(routine => (
                   <div 
                     key={routine.id}
                     className={`cockpit-routine-item ${routine.completed ? 'completed' : ''}`}
@@ -445,12 +447,12 @@ export function DashboardCockpit({
                 <Utensils size={13} className="text-cyan" />
               </div>
 
-              <div style={{ marginTop: '8px' }}>
+              <div style={{ marginTop: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                  <span className="mono text-xl font-extrabold text-cyan">{totalKcal}</span>
+                  <span className="mono text-lg font-extrabold text-cyan">{totalKcal}</span>
                   <span className="mono text-2xs text-muted">/ {goalKcal} kcal</span>
                 </div>
-                <div style={{ marginTop: '6px', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ marginTop: '4px', height: '5px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
                   <div 
                     style={{ height: '100%', background: 'var(--cyan-primary)', borderRadius: '999px', width: `${Math.min(100, Math.round((totalKcal / goalKcal) * 100))}%`, transition: 'width 0.3s' }}
                   ></div>
@@ -458,9 +460,9 @@ export function DashboardCockpit({
               </div>
 
               {/* Nutrients Macro Bars */}
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                     <span className="text-muted">탄수화물</span>
                     <span className="mono text-cyan font-bold">{totalCarbs}g / {goalCarbs}g</span>
                   </div>
@@ -470,7 +472,7 @@ export function DashboardCockpit({
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                     <span className="text-muted">단백질</span>
                     <span className="mono text-emerald font-bold">{totalProtein}g / {goalProtein}g</span>
                   </div>
@@ -480,7 +482,7 @@ export function DashboardCockpit({
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
                     <span className="text-muted">지방</span>
                     <span className="mono text-amber font-bold">{totalFat}g / {goalFat}g</span>
                   </div>
@@ -527,7 +529,7 @@ export function DashboardCockpit({
         </div>
 
         {/* 2-Column Split: Indices & Watchlist + Market News */}
-        <div className="cockpit-split-columns">
+        <div className="cockpit-split-columns split-stocks">
           {/* Left: Major Indices & Watchlist */}
           <div className="cockpit-col-left">
             {/* Top 2 Index Mini Cards */}
@@ -547,8 +549,8 @@ export function DashboardCockpit({
               ))}
             </div>
 
-            {/* Watchlist Table */}
-            <div className="cockpit-watchlist-stack">
+            {/* Watchlist Table (Optimized Compact Stack) */}
+            <div className="cockpit-watchlist-stack" style={{ marginTop: '6px' }}>
               {portfolioWatchlist.map((item, i) => (
                 <div key={i} className="cockpit-watchlist-row">
                   <span className="text-xs font-medium text-highlight">{item.name}</span>
@@ -621,8 +623,8 @@ export function DashboardCockpit({
           </div>
         </div>
 
-        {/* 2-Column Split: Curated Papers + Topic Filter Tags */}
-        <div className="cockpit-split-columns">
+        {/* 2-Column Split: Curated Papers (Left 1.15fr) + Topic Filter Tags & Action (Right 0.85fr) */}
+        <div className="cockpit-split-columns split-pubmed">
           {/* Left: Latest Curated Papers with AI Key Findings */}
           <div className="cockpit-col-left" style={{ gap: '8px' }}>
             <div className="cockpit-section-subhead" style={{ marginBottom: '2px' }}>
@@ -651,11 +653,12 @@ export function DashboardCockpit({
             ))}
           </div>
 
-          {/* Right: Interest Topic Tags & Quick Search */}
+          {/* Right: Interest Topic Tags, Recommendation Tags & Action */}
           <div className="cockpit-col-right">
             <div>
               <div className="cockpit-section-subhead">
                 <span className="text-xs font-bold text-highlight">나의 관심 분야</span>
+                <span className="mono text-2xs text-muted">Filter</span>
               </div>
 
               <div className="cockpit-topic-tags">
@@ -669,11 +672,25 @@ export function DashboardCockpit({
                   </button>
                 ))}
               </div>
+
+              {/* Recommended Search Keywords Pill Box */}
+              <div style={{ marginTop: '10px', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  <Tag size={10} />
+                  <span>오늘의 추천 키워드</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  <span className="badge badge-purple text-2xs cursor-pointer" onClick={() => onNavigateTab('pubmed')}>#서파수면</span>
+                  <span className="badge badge-cyan text-2xs cursor-pointer" onClick={() => onNavigateTab('pubmed')}>#Glymphatic</span>
+                  <span className="badge badge-emerald text-2xs cursor-pointer" onClick={() => onNavigateTab('pubmed')}>#미토콘드리아</span>
+                  <span className="badge badge-amber text-2xs cursor-pointer" onClick={() => onNavigateTab('pubmed')}>#인슐린감수성</span>
+                </div>
+              </div>
             </div>
 
-            <div style={{ padding: '12px', borderRadius: '12px', textAlign: 'center', marginTop: '12px', background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+            <div style={{ padding: '10px 12px', borderRadius: '10px', textAlign: 'center', background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
               <p className="text-xs font-bold text-highlight" style={{ margin: 0 }}>PubMed Search Hub</p>
-              <p className="text-2xs text-muted" style={{ margin: '4px 0 0 0' }}>
+              <p className="text-2xs text-muted" style={{ margin: '2px 0 0 0' }}>
                 원하는 학술 논문을 실시간 색인하고 옵시디언으로 동기화하세요.
               </p>
               <button 

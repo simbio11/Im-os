@@ -215,14 +215,14 @@ export function ExpenseTracker({
             </div>
 
             <h3 className="mt-1">이번 달 투자 가용 잉여금 산출 공식</h3>
-            <div className="surplus-equation-strip mono text-xs mt-1">
-              <span className="text-highlight font-bold">소득 (+{(monthlyIncome / 10000).toLocaleString()}만)</span>
-              <span className="text-muted">-</span>
-              <span className="text-rose font-bold">고정비 ({(fixedCosts / 10000).toLocaleString()}만)</span>
-              <span className="text-muted">-</span>
-              <span className="text-amber font-bold">변동지출 ({totalVariableExpense.toLocaleString()}원)</span>
-              <span className="text-muted">=</span>
-              <span className="text-cyan font-extrabold text-sm">{availableInvestmentSurplus.toLocaleString()}원</span>
+            <div className="surplus-equation-strip mt-1">
+              <span className="equation-term text-highlight font-bold">소득 (+<span className="mono font-bold">{(monthlyIncome / 10000).toLocaleString()}</span>만)</span>
+              <span className="equation-op text-muted">-</span>
+              <span className="equation-term text-rose font-bold">고정비 (<span className="mono font-bold">{(fixedCosts / 10000).toLocaleString()}</span>만)</span>
+              <span className="equation-op text-muted">-</span>
+              <span className="equation-term text-amber font-bold">변동지출 (<span className="mono font-bold">{totalVariableExpense.toLocaleString()}</span>원)</span>
+              <span className="equation-op text-muted">=</span>
+              <span className="equation-result text-cyan font-extrabold text-sm"><span className="mono font-extrabold">{availableInvestmentSurplus.toLocaleString()}</span>원</span>
             </div>
           </div>
         </div>
