@@ -188,7 +188,7 @@ export function DashboardCockpit({
       <div className="cockpit-card">
         {/* Header */}
         <div className="cockpit-card-header">
-          <div className="cockpit-title-group">
+          <div className="cockpit-title-group" onClick={() => onNavigateTab('calendar')} title="캘린더 전체 화면으로 이동">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
               <CalendarDays size={15} />
             </div>
@@ -376,7 +376,7 @@ export function DashboardCockpit({
       <div className="cockpit-card">
         {/* Header */}
         <div className="cockpit-card-header">
-          <div className="cockpit-title-group">
+          <div className="cockpit-title-group" onClick={() => onNavigateTab('life')} title="생활관리 전체 화면으로 이동">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(0, 240, 255, 0.1)', borderColor: 'rgba(0, 240, 255, 0.3)', color: 'var(--cyan-primary)' }}>
               <Activity size={15} />
             </div>
@@ -534,7 +534,7 @@ export function DashboardCockpit({
       <div className="cockpit-card">
         {/* Header */}
         <div className="cockpit-card-header">
-          <div className="cockpit-title-group">
+          <div className="cockpit-title-group" onClick={() => onNavigateTab('market')} title="주식 & 마켓 전체 화면으로 이동">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: 'var(--emerald-primary)' }}>
               <TrendingUp size={15} />
             </div>
@@ -542,21 +542,19 @@ export function DashboardCockpit({
           </div>
 
           <div className="cockpit-header-actions">
-            {/* View Switcher: Global vs DART Korea */}
-            <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
+            {/* Sleek Segmented Switcher: Global vs DART Korea */}
+            <div className="cockpit-seg-toggle">
               <button
-                className={`btn-xs ${stockViewTab === 'global' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}
+                className={`cockpit-seg-btn ${stockViewTab === 'global' ? 'active' : ''}`}
                 onClick={() => setStockViewTab('global')}
               >
                 글로벌/미장
               </button>
               <button
-                className={`btn-xs ${stockViewTab === 'dart' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '6px' }}
+                className={`cockpit-seg-btn ${stockViewTab === 'dart' ? 'active' : ''}`}
                 onClick={() => setStockViewTab('dart')}
               >
-                🇰🇷 DART 공시
+                <span className="mono font-bold" style={{ fontSize: '9px' }}>KR</span> DART 공시
               </button>
             </div>
 
@@ -705,7 +703,7 @@ export function DashboardCockpit({
       <div className="cockpit-card">
         {/* Header */}
         <div className="cockpit-card-header">
-          <div className="cockpit-title-group">
+          <div className="cockpit-title-group" onClick={() => onNavigateTab('knowledge')} title="PubMed 논문 허브로 이동">
             <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
               <BookOpenCheck size={15} />
             </div>
