@@ -12,7 +12,8 @@ import {
   TrendingUp, 
   Sparkles,
   Zap,
-  RotateCw
+  RotateCw,
+  Cloud
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -22,6 +23,8 @@ export function Header({
   onOpenCommandPalette, 
   onOpenObsidianModal, 
   onOpenLevelModal,
+  onOpenAuthModal,
+  currentUser,
   activeTab,
   setActiveTab,
   isMusicPlaying,
@@ -178,6 +181,17 @@ export function Header({
             <Command size={14} />
             <span className="cmd-text">Quick Cmd</span>
             <kbd className="cmd-kbd">Ctrl+K</kbd>
+          </button>
+
+          <button 
+            className={`btn btn-sm ${currentUser ? 'btn-secondary' : 'btn-secondary'}`}
+            onClick={onOpenAuthModal}
+            title={currentUser ? `클라우드 동기화 중 (${currentUser.email || '로그인됨'})` : "PC ↔ 스마트폰 실시간 클라우드 동기화"}
+          >
+            <Cloud size={14} className={currentUser ? "text-emerald" : "text-purple"} />
+            <span className="btn-obsidian-text">
+              {currentUser ? "클라우드 🟢" : "클라우드 동기화"}
+            </span>
           </button>
 
           <button 

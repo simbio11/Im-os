@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Header 
-} from './components/Header';
+import { Header } from './components/Header';
 import { CommandPalette } from './components/CommandPalette';
 import { LevelUpModal } from './components/LevelUpModal';
 import { LevelSystemModal } from './components/LevelSystemModal';
 import { ObsidianModal } from './components/ObsidianModal';
+import { AuthSyncModal } from './components/AuthSyncModal';
+import { 
+  auth, 
+  syncUserDataToCloud, 
+  subscribeToCloudUserData 
+} from './services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { DailyRoutines } from './components/DailyRoutines';
 import { DietTracker } from './components/DietTracker';
 import { RunningTracker } from './components/RunningTracker';
@@ -137,9 +142,52 @@ export function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [obsidianModalOpen, setObsidianModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [levelUpModalOpen, setLevelUpModalOpen] = useState(false);
   const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
   const [ragInitialQuery, setRagInitialQuery] = useState('');
+
+  // Monitor Auth State
+  useEffect(() => {
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, user => {
+        setCurrentUser(user);
+      });
+      return () => unsubscribe();
+    }
+  }, []);
+
+  // Real-time Cloud Data Subscription (Device Sync)
+  useEffect(() => {
+    if (currentUser?.uid) {
+      const unsubscribe = subscribeToCloudUserData(currentUser.uid, (cloudData) => {
+        if (cloudData) {
+          if (cloudData.userProfile) setUserProfile(cloudData.userProfile);
+          if (cloudData.routines) setRoutines(cloudData.routines);
+          if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs);
+          if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs);
+          if (cloudData.expenses) setExpenses(cloudData.expenses);
+          if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [currentUser]);
+
+  // Sync to Cloud when local states change
+  useEffect(() => {
+    if (currentUser?.uid) {
+      syncUserDataToCloud(currentUser.uid, {
+        userProfile,
+        routines,
+        dietLogs,
+        runningLogs,
+        expenses,
+        calendarEvents
+      });
+    }
+  }, [currentUser, userProfile, routines, dietLogs, runningLogs, expenses, calendarEvents]);
 
   // Global YouTube Music State
   const [currentTrack, setCurrentTrack] = useState(() => {
@@ -357,6 +405,8 @@ export function App() {
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         onOpenObsidianModal={() => setObsidianModalOpen(true)}
         onOpenLevelModal={() => setLevelSystemModalOpen(true)}
+        onOpenAuthModal={() => setAuthModalOpen(true)}
+        currentUser={currentUser}
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={handleToggleMusic}
         onShuffleMusic={handleShuffleMusic}
@@ -654,6 +704,11 @@ export function App() {
         levelInfo={levelInfo}
         onAwardXP={awardXP}
         onResetXP={handleResetXP}
+      />
+
+      <AuthSyncModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
       />
 
       {/* Mobile Bottom Navigation Bar (Shown on Mobile screens <= 768px) */}
