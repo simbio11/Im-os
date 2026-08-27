@@ -509,73 +509,76 @@ export function App() {
               onOpenObsidianModal={() => setObsidianModalOpen(true)}
             />
 
-            {/* 2. Quick Status HUD Cards (Moved below Stocks & PubMed) */}
+            {/* 2. Quick Status HUD Cards (Clean Typography & Icon Hierarchy) */}
             <div className="hud-metric-cards-row" style={{ marginTop: '20px', marginBottom: '20px' }}>
               {/* Card 1: Investment Surplus */}
               <div 
-                className="hud-card glass-card glass-card-interactive" 
+                className="hud-card glass-card-interactive" 
                 onClick={() => setActiveTab('life')}
               >
                 <div className="hud-card-top">
-                  <span className="hud-card-label">🎯 이번 달 투자 가용 잉여금</span>
+                  <span className="hud-card-label">이번 달 투자 가용 잉여금</span>
                   <DollarSign size={16} className="text-cyan" />
                 </div>
-                <div className="hud-card-val mono text-cyan">
-                  {availableInvestmentSurplus.toLocaleString()} <small>원</small>
+                <div className="hud-card-val text-cyan">
+                  <span className="mono">{availableInvestmentSurplus.toLocaleString()}</span> <small>원</small>
                 </div>
-                <div className="hud-card-sub text-xs text-muted">
+                <div className="hud-card-sub">
                   소득 {(monthlyIncome / 10000).toLocaleString()}만 - 고정비 {(fixedCosts / 10000).toLocaleString()}만 - 변동 {totalVariableExpense.toLocaleString()}원
                 </div>
               </div>
 
               {/* Card 2: Today's Schedule & XP Progress */}
               <div 
-                className="hud-card glass-card glass-card-interactive"
+                className="hud-card glass-card-interactive"
                 onClick={() => setActiveTab('calendar')}
               >
                 <div className="hud-card-top">
-                  <span className="hud-card-label">📅 오늘 주요 일정 & 딥워크</span>
+                  <span className="hud-card-label">오늘 주요 일정 & 딥워크</span>
                   <Calendar size={16} className="text-emerald" />
                 </div>
-                <div className="hud-card-val mono text-emerald">
-                  {calendarEvents.filter(e => e.completed).length} / {calendarEvents.length} <small>완수</small>
+                <div className="hud-card-val text-emerald">
+                  <span className="mono">{calendarEvents.filter(e => e.completed).length} / {calendarEvents.length}</span> <small>완수</small>
                 </div>
-                <div className="hud-card-sub text-xs text-muted">
-                  총 보유 XP: {userProfile.currentXP?.toLocaleString()} XP (Lv.{userProfile.level})
+                <div className="hud-card-sub">
+                  총 보유 XP: <span className="mono">{userProfile.currentXP?.toLocaleString()}</span> XP (Lv.{userProfile.level})
                 </div>
               </div>
 
               {/* Card 3: Daily Routine Checklist Status */}
               <div 
-                className="hud-card glass-card glass-card-interactive"
+                className="hud-card glass-card-interactive"
                 onClick={() => setActiveTab('life')}
               >
                 <div className="hud-card-top">
-                  <span className="hud-card-label">📋 데일리 루틴 프로토콜</span>
+                  <span className="hud-card-label">데일리 루틴 프로토콜</span>
                   <CheckSquare size={16} className="text-purple" />
                 </div>
-                <div className="hud-card-val mono text-purple">
-                  {completedRoutinesCount} / {routines.length} <small>완수</small>
+                <div className="hud-card-val text-purple">
+                  <span className="mono">{completedRoutinesCount} / {routines.length}</span> <small>완수</small>
                 </div>
-                <div className="hud-card-sub text-xs text-muted">
-                  연속 스트릭: {userProfile.streak}일 달성 중 🔥
+                <div className="hud-card-sub">
+                  연속 스트릭: <span className="mono text-amber font-bold">{userProfile.streak}일</span> 달성 중
                 </div>
               </div>
 
               {/* Card 4: Daily Nutrition & Protein */}
               <div 
-                className="hud-card glass-card glass-card-interactive"
+                className="hud-card glass-card-interactive"
                 onClick={() => setActiveTab('life')}
               >
                 <div className="hud-card-top">
-                  <span className="hud-card-label">🥗 식단 영양소 & 칼로리</span>
+                  <span className="hud-card-label">식단 영양소 & 칼로리</span>
                   <Utensils size={16} className="text-amber" />
                 </div>
-                <div className="hud-card-val mono text-amber">
-                  {totalKcal} <small>kcal</small> <span className="text-xs text-emerald">(단백질 {totalProtein}g)</span>
+                <div className="hud-card-val text-amber" style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span className="mono">{totalKcal}</span> <small>kcal</small>
+                  <span className="text-xs text-emerald font-semibold" style={{ marginLeft: '4px' }}>
+                    (단백질 <span className="mono font-bold">{totalProtein}g</span>)
+                  </span>
                 </div>
-                <div className="hud-card-sub text-xs text-muted">
-                  목표 2,200 kcal 대비 {Math.round((totalKcal / 2200) * 100)}%
+                <div className="hud-card-sub">
+                  목표 2,200 kcal 대비 <span className="mono font-bold">{Math.round((totalKcal / 2200) * 100)}%</span>
                 </div>
               </div>
             </div>

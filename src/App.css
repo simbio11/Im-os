@@ -6133,6 +6133,75 @@
   color: var(--text-highlight);
 }
 
+/* ==========================================================
+   Quick Status HUD Cards Styling (Clean Sans-Serif Typography)
+   ========================================================== */
+.hud-metric-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.hud-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, rgba(22, 17, 36, 0.65) 0%, rgba(13, 9, 24, 0.75) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.hud-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.6), 0 0 16px rgba(168, 85, 247, 0.12);
+}
+
+.hud-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.hud-card-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+
+.hud-card-val {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  line-height: 1.2;
+}
+
+.hud-card-val small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.hud-card-sub {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+
 
 
 
