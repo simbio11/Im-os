@@ -13,7 +13,10 @@ import {
   CheckCircle,
   Equal,
   Minus,
-  ArrowRight
+  ArrowRight,
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
@@ -26,15 +29,39 @@ export function ExpenseTracker({
   expenses, 
   onAddExpense, 
   onDeleteExpense,
-  onUpdateBudget 
+  onUpdateBudget,
+  onUpdateUserProfile
 }) {
   const [smsInput, setSmsInput] = useState('');
   const [previewParsed, setPreviewParsed] = useState(null);
+  const [editingField, setEditingField] = useState(null); // 'income' | 'fixed' | 'target'
+  const [editValue, setEditValue] = useState('');
 
   // Financial Variables
   const monthlyIncome = Number(userProfile?.monthlyIncome) || 6500000; // 650만원
   const fixedCosts = Number(userProfile?.fixedCosts) || 1850000; // 185만원
   const investmentTarget = Number(userProfile?.monthlyInvestmentTarget) || 3000000; // 300만원
+
+  const startEdit = (field, currentVal) => {
+    setEditingField(field);
+    setEditValue(String(currentVal));
+  };
+
+  const commitEdit = () => {
+    const num = parseInt(editValue.replace(/,/g, ''), 10);
+    if (!isNaN(num) && num >= 0 && onUpdateUserProfile) {
+      if (editingField === 'income') onUpdateUserProfile({ monthlyIncome: num });
+      if (editingField === 'fixed') onUpdateUserProfile({ fixedCosts: num });
+      if (editingField === 'target') onUpdateUserProfile({ monthlyInvestmentTarget: num });
+    }
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
 
   // Calculate Cumulative Variable Expenses
   const validExpenses = Array.isArray(expenses) ? expenses : [];
@@ -152,28 +179,76 @@ export function ExpenseTracker({
 
         {/* Financial Calculation Steps Grid (3 Inputs + 1 Full Result Banner) */}
         <div className="surplus-steps-grid mt-3">
-          {/* Step 1: Income */}
-          <div className="surplus-step-tile">
+          {/* Step 1: Income - Editable */}
+          <div 
+            className="surplus-step-tile surplus-step-tile-editable cursor-pointer"
+            onClick={() => editingField !== 'income' && startEdit('income', monthlyIncome)}
+            title="클릭하여 당월 총소득 수정"
+          >
             <div className="step-tile-top">
               <span className="step-tag text-cyan">1. 당월 총소득</span>
               <span className="step-sign text-emerald">+</span>
             </div>
-            <div className="step-amount mono text-highlight">
-              {monthlyIncome.toLocaleString()}원
-            </div>
-            <span className="step-desc text-muted text-xs">급여 및 사업 소득</span>
+            {editingField === 'income' ? (
+              <div className="step-edit-box mt-1" onClick={e => e.stopPropagation()}>
+                <input
+                  autoFocus
+                  type="number"
+                  className="input-text step-inline-input"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={e => e.key === 'Enter' && commitEdit()}
+                />
+                <div className="flex gap-1 mt-1">
+                  <button className="btn btn-primary btn-xs" onClick={commitEdit}>저장</button>
+                  <button className="btn btn-secondary btn-xs" onClick={cancelEdit}>취소</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="step-amount mono text-highlight">
+                  {monthlyIncome.toLocaleString()}원 <Edit3 size={12} className="inline text-muted" />
+                </div>
+                <span className="step-desc text-muted text-xs">급여 및 사업 소득 (클릭하여 수정)</span>
+              </>
+            )}
           </div>
 
-          {/* Step 2: Fixed Costs */}
-          <div className="surplus-step-tile">
+          {/* Step 2: Fixed Costs - Editable */}
+          <div 
+            className="surplus-step-tile surplus-step-tile-editable cursor-pointer"
+            onClick={() => editingField !== 'fixed' && startEdit('fixed', fixedCosts)}
+            title="클릭하여 고정비 수정"
+          >
             <div className="step-tile-top">
               <span className="step-tag text-rose">2. 고정비</span>
               <span className="step-sign text-rose">-</span>
             </div>
-            <div className="step-amount mono text-rose">
-              {fixedCosts.toLocaleString()}원
-            </div>
-            <span className="step-desc text-muted text-xs">월세, 보험, 통신, 대출</span>
+            {editingField === 'fixed' ? (
+              <div className="step-edit-box mt-1" onClick={e => e.stopPropagation()}>
+                <input
+                  autoFocus
+                  type="number"
+                  className="input-text step-inline-input"
+                  value={editValue}
+                  onChange={e => setEditValue(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={e => e.key === 'Enter' && commitEdit()}
+                />
+                <div className="flex gap-1 mt-1">
+                  <button className="btn btn-primary btn-xs" onClick={commitEdit}>저장</button>
+                  <button className="btn btn-secondary btn-xs" onClick={cancelEdit}>취소</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="step-amount mono text-rose">
+                  {fixedCosts.toLocaleString()}원 <Edit3 size={12} className="inline text-muted" />
+                </div>
+                <span className="step-desc text-muted text-xs">월세, 보험, 통신, 대출 (클릭하여 수정)</span>
+              </>
+            )}
           </div>
 
           {/* Step 3: Cumulative Variable Expenses */}
@@ -189,16 +264,39 @@ export function ExpenseTracker({
           </div>
         </div>
 
-        {/* Step 4: Final Investment Surplus Result Card (Full Width - Never Cut Off) */}
+        {/* Step 4: Final Investment Surplus Result Card */}
         <div className="surplus-result-banner glass-card mt-3">
           <div className="result-banner-left">
             <span className="badge badge-cyan font-bold text-xs">🎯 최종 투자 가용 잉여금</span>
             <div className="result-amount mono text-cyan">
               {availableInvestmentSurplus.toLocaleString()} <small className="text-sm">원</small>
             </div>
-            <p className="text-muted text-xs mt-1">
-              월간 투자 목표({investmentTarget.toLocaleString()}원) 대비 <strong className="text-emerald">{surplusTargetPercent}%</strong> 달성 중
-            </p>
+            {editingField === 'target' ? (
+              <div className="step-edit-box mt-1" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted">투자 목표:</span>
+                  <input
+                    autoFocus
+                    type="number"
+                    className="input-text step-inline-input w-32"
+                    value={editValue}
+                    onChange={e => setEditValue(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={e => e.key === 'Enter' && commitEdit()}
+                  />
+                  <button className="btn btn-primary btn-xs" onClick={commitEdit}>저장</button>
+                  <button className="btn btn-secondary btn-xs" onClick={cancelEdit}>취소</button>
+                </div>
+              </div>
+            ) : (
+              <p 
+                className="text-muted text-xs mt-1 cursor-pointer"
+                onClick={() => startEdit('target', investmentTarget)}
+                title="클릭하여 목표 투자액 수정"
+              >
+                월간 투자 목표(<span className="text-highlight underline font-bold">{investmentTarget.toLocaleString()}원 ✏️</span>) 대비 <strong className="text-emerald">{surplusTargetPercent}%</strong> 달성 중
+              </p>
+            )}
           </div>
 
           <div className="result-banner-right">
@@ -260,114 +358,108 @@ export function ExpenseTracker({
             <span className="text-muted text-xs">빠른 예시:</span>
             <button
               type="button"
-              className="chip-btn"
-              onClick={() => handleInputChange("[신한카드] 08/26 12:30 스타벅스 8,500원 결제")}
+              className="badge badge-cyan cursor-pointer"
+              onClick={() => handleInputChange('[KB국민] 08/27 12:40 구내식당 9,000원 결제')}
             >
-              스타벅스 8,500원 (식비/카페)
+              🍱 점심 식비
             </button>
             <button
               type="button"
-              className="chip-btn"
-              onClick={() => handleInputChange("쿠팡 45,000원 결제 (생활/쇼핑)")}
+              className="badge badge-purple cursor-pointer"
+              onClick={() => handleInputChange('교보문고 AI 서적 35000원 구매')}
             >
-              쿠팡 45,000원 (생활/쇼핑)
+              📚 도서 구매
             </button>
             <button
               type="button"
-              className="chip-btn"
-              onClick={() => handleInputChange("해외주식 500,000원 매수 (투자/자산)")}
+              className="badge badge-amber cursor-pointer"
+              onClick={() => handleInputChange('스타벅스 아메리카노 4500원')}
             >
-              해외주식 50만원 (투자/자산)
+              ☕ 카페
             </button>
           </div>
-
-          {/* Live NLP Extraction Preview Box */}
-          {previewParsed && (
-            <div className="expense-preview-card mt-3">
-              <div className="preview-top-row">
-                <span className="badge badge-cyan">자연어 지출 분석 추출 결과</span>
-                <span className="mono font-bold text-highlight">{previewParsed.amount.toLocaleString()}원</span>
-              </div>
-              <div className="preview-details-grid mt-2">
-                <div className="preview-detail-chip">
-                  <span className="text-muted text-xs">가맹점 / 내역:</span>
-                  <strong className="text-highlight text-xs">{previewParsed.description}</strong>
-                </div>
-                <div className="preview-detail-chip">
-                  <span className="text-muted text-xs">자동 분류 카테고리:</span>
-                  <span className="badge badge-purple">{previewParsed.category}</span>
-                </div>
-                <div className="preview-detail-chip">
-                  <span className="text-muted text-xs">지출 일시:</span>
-                  <span className="mono text-xs">{previewParsed.date} {previewParsed.time}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </form>
+
+        {previewParsed && (
+          <div className="nlp-preview-card mt-3">
+            <div className="nlp-preview-header">
+              <Sparkles size={14} className="text-cyan" />
+              <span className="text-xs font-bold text-cyan">자연어 파싱 결과 미리보기</span>
+            </div>
+            <div className="nlp-preview-body mt-1">
+              <span className="preview-chip">항목: <strong>{previewParsed.description}</strong></span>
+              <span className="preview-chip">금액: <strong className="text-rose">{Number(previewParsed.amount).toLocaleString()}원</strong></span>
+              <span className="preview-chip">분류: <strong className="text-cyan">{previewParsed.category}</strong></span>
+              <span className="preview-chip text-muted text-xs">일시: {previewParsed.date}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 2-Column Split: Category Doughnut Chart & Expense Logs Table */}
-      <div className="expense-grid mt-4">
-        {/* Left Column: Category Breakdown Chart */}
+      {/* 2-Column Split: Donut Chart & Expense History Table */}
+      <div className="expense-detail-grid mt-4">
+        {/* Left: Category Doughnut Chart */}
         <div className="expense-chart-card glass-card">
           <div className="panel-header">
             <div className="panel-title-with-icon">
               <PieIcon size={18} className="text-cyan" />
               <h4>카테고리별 지출 비중</h4>
             </div>
-            <span className="mono text-xs text-muted">Total: {totalVariableExpense.toLocaleString()}원</span>
           </div>
 
-          <div className="expense-chart-wrapper">
-            <div className="doughnut-chart-box">
+          <div className="doughnut-chart-wrapper">
+            {chartLabels.length > 0 ? (
               <Doughnut data={chartData} options={chartOptions} />
-              <div className="chart-center-overlay">
-                <div className="center-kcal mono font-bold text-highlight">{expenses.length}</div>
-                <div className="center-unit text-muted text-xs">건 결제</div>
+            ) : (
+              <div className="empty-state-card">
+                <Wallet size={32} className="text-muted mb-2" />
+                <p className="text-muted text-xs">지출 내역이 없습니다.</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Expense Transaction History List */}
+        {/* Right: Expense Items History List */}
         <div className="expense-history-card glass-card">
           <div className="panel-header">
-            <h4>지출 내역 목록 ({expenses.length}건)</h4>
-            <span className="badge badge-cyan">Transactions</span>
+            <div className="panel-title-with-icon">
+              <Wallet size={18} className="text-emerald" />
+              <h4>변동지출 내역 ({expenses.length}건)</h4>
+            </div>
+            <span className="mono text-xs text-muted">
+              총 {totalVariableExpense.toLocaleString()}원
+            </span>
           </div>
 
-          <div className="expense-list-items">
-            {validExpenses.length === 0 ? (
-              <div className="empty-state-box">
-                <CreditCard size={32} className="text-faint" />
-                <p className="text-muted text-xs">기록된 지출 내역이 없습니다.</p>
+          <div className="expense-items-table">
+            {expenses.length === 0 ? (
+              <div className="empty-state-card">
+                <p className="text-muted text-xs">등록된 지출 내역이 없습니다.</p>
               </div>
             ) : (
-              validExpenses.map(exp => (
-                <div key={exp.id || Math.random()} className="expense-item-row glass-card">
-                  <div className="exp-left">
-                    <span className="badge badge-purple text-xs">{exp.category || '기타'}</span>
-                    <div>
-                      <strong className="exp-desc text-sm text-highlight">
-                        {exp.description || exp.merchant || '지출 내역'}
-                      </strong>
-                      <div className="exp-time-sub text-xs text-muted mono">
-                        {exp.date || ''} {exp.time || ''} {exp.paymentMethod && `• ${exp.paymentMethod}`}
-                      </div>
+              expenses.map(expense => (
+                <div key={expense.id} className="expense-row-item">
+                  <div className="expense-item-info">
+                    <div className="expense-main-line">
+                      <span className="expense-desc">{expense.description}</span>
+                      <span className="badge badge-cyan text-xs">{expense.category}</span>
+                    </div>
+                    <div className="expense-meta-line text-xs text-muted">
+                      <span>{expense.date}</span>
+                      {expense.card && <span> · {expense.card}</span>}
                     </div>
                   </div>
 
-                  <div className="exp-right">
-                    <span className="exp-amount mono font-bold text-highlight">
-                      -{(Number(exp.amount) || 0).toLocaleString()}원
+                  <div className="expense-item-actions">
+                    <span className="expense-amount mono text-rose font-bold">
+                      -{Number(expense.amount).toLocaleString()}원
                     </span>
-                    <button 
-                      className="btn-icon btn-delete ml-2"
-                      onClick={() => onDeleteExpense(exp.id)}
+                    <button
+                      className="btn-icon btn-delete"
+                      onClick={() => onDeleteExpense(expense.id)}
                       title="지출 삭제"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>

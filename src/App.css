@@ -5378,6 +5378,85 @@
   border-radius: var(--radius-sm);
 }
 
+/* ==========================================================
+   Surplus Step Tile Editable & Inline Input
+   ========================================================== */
+.surplus-step-tile-editable {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.surplus-step-tile-editable:hover {
+  border-color: var(--cyan-primary);
+  background: rgba(0, 240, 255, 0.05);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+}
+
+.step-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step-inline-input {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--cyan-primary);
+  border-radius: var(--radius-sm);
+  color: var(--cyan-primary);
+}
+
+/* ==========================================================
+   AI Routine Schedule Template Panel & Timeblock Editor
+   ========================================================== */
+.ai-template-panel {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(8, 11, 17, 0.95) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15);
+}
+
+.ai-preview-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ai-preview-list::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+.timeline-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.timeline-edit-row .node-time-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.node-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.timeline-node:hover .node-actions {
+  opacity: 1;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+
 
 
 

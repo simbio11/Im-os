@@ -430,7 +430,9 @@ export function App() {
   // Financial Surplus Computations
   const variableExpenses = expenses.filter(e => !e.isFixed);
   const totalVariableExpense = variableExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-  const availableInvestmentSurplus = (userProfile.monthlyIncome || 6500000) - (userProfile.fixedCosts || 1850000) - totalVariableExpense;
+  const monthlyIncome = Number(userProfile?.monthlyIncome) || 6500000;
+  const fixedCosts = Number(userProfile?.fixedCosts) || 1850000;
+  const availableInvestmentSurplus = monthlyIncome - fixedCosts - totalVariableExpense;
 
   // Diet Computations
   const totalKcal = dietLogs.reduce((acc, l) => acc + (l.kcal || 0), 0);
@@ -492,24 +494,24 @@ export function App() {
                   {availableInvestmentSurplus.toLocaleString()} <small>원</small>
                 </div>
                 <div className="hud-card-sub text-xs text-muted">
-                  소득 650만 - 고정비 185만 - 변동 {totalVariableExpense.toLocaleString()}원
+                  소득 {(monthlyIncome / 10000).toLocaleString()}만 - 고정비 {(fixedCosts / 10000).toLocaleString()}만 - 변동 {totalVariableExpense.toLocaleString()}원
                 </div>
               </div>
 
-              {/* Card 2: 5km Running Progress */}
+              {/* Card 2: Today's Schedule & XP Progress */}
               <div 
                 className="hud-card glass-card glass-card-interactive"
-                onClick={() => setActiveTab('life')}
+                onClick={() => setActiveTab('calendar')}
               >
                 <div className="hud-card-top">
-                  <span className="hud-card-label">🏃 5km 러닝 주간 달성</span>
-                  <Activity size={16} className="text-emerald" />
+                  <span className="hud-card-label">📅 오늘 주요 일정 & 딥워크</span>
+                  <Calendar size={16} className="text-emerald" />
                 </div>
                 <div className="hud-card-val mono text-emerald">
-                  {runningLogs.length} / 4 <small>회 완수</small>
+                  {calendarEvents.filter(e => e.completed).length} / {calendarEvents.length} <small>완수</small>
                 </div>
                 <div className="hud-card-sub text-xs text-muted">
-                  최근 페이스: {runningLogs[0]?.pace || "5'16\""} (Zone 2 최적화)
+                  총 보유 XP: {userProfile.currentXP?.toLocaleString()} XP (Lv.{userProfile.level})
                 </div>
               </div>
 
@@ -572,6 +574,7 @@ export function App() {
                   expenses={expenses}
                   onAddExpense={handleAddExpense}
                   onDeleteExpense={handleDeleteExpense}
+                  onUpdateUserProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
                 />
 
                 <div className="mt-4">
@@ -622,19 +625,12 @@ export function App() {
             </div>
 
             <div className="subtab-section mt-5">
-              <RunningTracker
-                runningLogs={runningLogs}
-                onAddRunLog={handleAddRunLog}
-                onDeleteRunLog={handleDeleteRunLog}
-              />
-            </div>
-
-            <div className="subtab-section mt-5">
               <ExpenseTracker
                 userProfile={userProfile}
                 expenses={expenses}
                 onAddExpense={handleAddExpense}
                 onDeleteExpense={handleDeleteExpense}
+                onUpdateUserProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
               />
             </div>
           </div>
