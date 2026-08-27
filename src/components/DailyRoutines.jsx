@@ -117,10 +117,16 @@ export function DailyRoutines({
   const [timeblocks, setTimeblocks] = useState(() => {
     try {
       const saved = localStorage.getItem('lm_timeblocks');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(b => !['tb1','tb2','tb3','tb4','tb5','tb6','tb7','tb8','tb9'].includes(b?.id));
+        }
+      }
     } catch {
       return [];
     }
+    return [];
   });
 
   const [editingBlock, setEditingBlock] = useState(null);

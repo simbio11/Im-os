@@ -66,6 +66,34 @@ import {
 
 import './App.css';
 
+const SCHEMA_VERSION = 'v2_clean_release_prod';
+
+// One-time automatic cleanup of legacy demo sample items for production distribution
+try {
+  const currentVersion = localStorage.getItem('lm_schema_version');
+  if (currentVersion !== SCHEMA_VERSION) {
+    localStorage.removeItem('lm_user_profile');
+    localStorage.removeItem('lm_routines');
+    localStorage.removeItem('lm_diet_logs');
+    localStorage.removeItem('lm_running_logs');
+    localStorage.removeItem('lm_expenses');
+    localStorage.removeItem('lm_calendar_events');
+    localStorage.removeItem('lm_timeblocks');
+    localStorage.setItem('lm_schema_version', SCHEMA_VERSION);
+  }
+} catch (e) {
+  console.warn("Schema initialization error:", e);
+}
+
+// Legacy sample IDs filter to prevent old dummy data from cloud reappearing
+const LEGACY_DUMMY_IDS = new Set([
+  'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+  'e1', 'e2', 'e3', 'e4', 'e5',
+  'evt-1', 'evt-2', 'evt-3', 'evt-4', 'evt-5', 'evt-6', 'evt-7', 'evt-8', 'evt-9',
+  'd1', 'd2', 'run1', 'run2', 'run3',
+  'tb1', 'tb2', 'tb3', 'tb4', 'tb5', 'tb6', 'tb7', 'tb8', 'tb9'
+]);
+
 export function App() {
   // 1. Persistent State with LocalStorage fallbacks
   const [userProfile, setUserProfile] = useState(() => {
@@ -90,7 +118,7 @@ export function App() {
       const saved = localStorage.getItem('lm_routines');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter(r => !LEGACY_DUMMY_IDS.has(r?.id));
       }
     } catch (e) {}
     return INITIAL_ROUTINES;
@@ -101,7 +129,7 @@ export function App() {
       const saved = localStorage.getItem('lm_diet_logs');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter(d => !LEGACY_DUMMY_IDS.has(d?.id));
       }
     } catch (e) {}
     return INITIAL_DIET_LOGS;
@@ -112,7 +140,7 @@ export function App() {
       const saved = localStorage.getItem('lm_running_logs');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter(r => !LEGACY_DUMMY_IDS.has(r?.id));
       }
     } catch (e) {}
     return INITIAL_RUNNING_LOGS;
@@ -123,7 +151,7 @@ export function App() {
       const saved = localStorage.getItem('lm_expenses');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter(e => !LEGACY_DUMMY_IDS.has(e?.id));
       }
     } catch (e) {}
     return INITIAL_EXPENSES;
@@ -134,7 +162,7 @@ export function App() {
       const saved = localStorage.getItem('lm_calendar_events');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.filter(ev => !LEGACY_DUMMY_IDS.has(ev?.id));
       }
     } catch (e) {}
     return INITIAL_CALENDAR_EVENTS;
@@ -164,14 +192,14 @@ export function App() {
           try {
             const cloudData = await getUserCloudData(user.uid);
             if (cloudData) {
-              // Apply existing cloud data to local state without triggering cloud write-back
+              // Apply existing cloud data to local state without triggering cloud write-back, filtering out any legacy dummy records
               isRemoteUpdateRef.current = true;
               if (cloudData.userProfile) setUserProfile(cloudData.userProfile);
-              if (cloudData.routines) setRoutines(cloudData.routines);
-              if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs);
-              if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs);
-              if (cloudData.expenses) setExpenses(cloudData.expenses);
-              if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents);
+              if (cloudData.routines) setRoutines(cloudData.routines.filter(r => !LEGACY_DUMMY_IDS.has(r?.id)));
+              if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs.filter(d => !LEGACY_DUMMY_IDS.has(d?.id)));
+              if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs.filter(r => !LEGACY_DUMMY_IDS.has(r?.id)));
+              if (cloudData.expenses) setExpenses(cloudData.expenses.filter(e => !LEGACY_DUMMY_IDS.has(e?.id)));
+              if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents.filter(ev => !LEGACY_DUMMY_IDS.has(ev?.id)));
             } else {
               // Initial push for newly registered account
               await syncUserDataToCloud(user.uid, {
@@ -203,11 +231,11 @@ export function App() {
         if (cloudData && isHydratedRef.current) {
           isRemoteUpdateRef.current = true;
           if (cloudData.userProfile) setUserProfile(cloudData.userProfile);
-          if (cloudData.routines) setRoutines(cloudData.routines);
-          if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs);
-          if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs);
-          if (cloudData.expenses) setExpenses(cloudData.expenses);
-          if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents);
+          if (cloudData.routines) setRoutines(cloudData.routines.filter(r => !LEGACY_DUMMY_IDS.has(r?.id)));
+          if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs.filter(d => !LEGACY_DUMMY_IDS.has(d?.id)));
+          if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs.filter(r => !LEGACY_DUMMY_IDS.has(r?.id)));
+          if (cloudData.expenses) setExpenses(cloudData.expenses.filter(e => !LEGACY_DUMMY_IDS.has(e?.id)));
+          if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents.filter(ev => !LEGACY_DUMMY_IDS.has(ev?.id)));
         }
       });
       return () => unsubscribe();
