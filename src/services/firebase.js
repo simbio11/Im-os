@@ -17,15 +17,14 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 
-// Default Firebase Configuration (can be updated with user's real project config)
-// You can also paste your config keys here or in localStorage!
+// Default Firebase Configuration for my-lmos-sync
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDummyKeyReplaceWithYourOwn",
-  authDomain: "lm-os-sync.firebaseapp.com",
-  projectId: "lm-os-sync",
-  storageBucket: "lm-os-sync.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyClb1nzDhzXhbEPC6hbEaPflP5sf-35Gjs",
+  authDomain: "my-lmos-sync.firebaseapp.com",
+  projectId: "my-lmos-sync",
+  storageBucket: "my-lmos-sync.firebasestorage.app",
+  messagingSenderId: "314650615967",
+  appId: "1:314650615967:web:685831e42dad54fd8a42aa"
 };
 
 // Retrieve config from localStorage or default
