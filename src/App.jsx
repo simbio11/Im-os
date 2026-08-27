@@ -460,8 +460,8 @@ export function App() {
   // Financial Surplus Computations
   const variableExpenses = expenses.filter(e => !e.isFixed);
   const totalVariableExpense = variableExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
-  const monthlyIncome = Number(userProfile?.monthlyIncome) || 6500000;
-  const fixedCosts = Number(userProfile?.fixedCosts) || 1850000;
+  const monthlyIncome = Number(userProfile?.monthlyIncome ?? 0);
+  const fixedCosts = Number(userProfile?.fixedCosts ?? 0);
   const availableInvestmentSurplus = monthlyIncome - fixedCosts - totalVariableExpense;
 
   // Diet Computations

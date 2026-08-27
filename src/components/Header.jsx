@@ -228,18 +228,18 @@ export function Header({
           <span>주식 & 매크로 인텔리전스</span>
         </button>
         <button 
-          className={`nav-tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rag')}
-        >
-          <Bot size={15} />
-          <span>RAG 지식 질의 & AI</span>
-        </button>
-        <button 
           className={`nav-tab-btn ${activeTab === 'knowledge' ? 'active' : ''}`}
           onClick={() => setActiveTab('knowledge')}
         >
           <BookOpenCheck size={15} />
           <span>PubMed & GitHub 큐레이션</span>
+        </button>
+        <button 
+          className={`nav-tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rag')}
+        >
+          <Bot size={15} />
+          <span>RAG 지식 질의 & AI</span>
         </button>
         <button 
           className={`nav-tab-btn ${activeTab === 'soundscape' ? 'active' : ''}`}
