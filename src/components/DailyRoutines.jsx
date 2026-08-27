@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   CheckCircle2, Circle, Clock, Plus, Flame, Zap, Calendar,
-  FileText, CheckSquare, Trash2, Edit3, Sparkles, X, Save
+  FileText, CheckSquare, Trash2, Edit3, Sparkles, X, Save,
+  Briefcase, Sun, BookOpen, HeartPulse
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -16,20 +17,84 @@ const CATEGORIES = [
 
 const getCatById = (id) => CATEGORIES.find(c => c.id === id) || CATEGORIES[0];
 
-const AI_TEMPLATES = [
-  { time: '06:30', event: '기상 & 미온수 수분 보충 (500ml)', category: 'fitness' },
-  { time: '07:00', event: '아침 스트레칭 & 명상 10분', category: 'night' },
-  { time: '08:00', event: '건강식 아침 식사 (단백질/그릭요거트)', category: 'meal' },
-  { time: '09:00', event: '1차 딥워크: 핵심 프로젝트 집중 (90분)', category: 'productivity' },
-  { time: '10:30', event: '가벼운 산책 & 수분 보충', category: 'fitness' },
-  { time: '12:00', event: '점심 식사 & 휴식', category: 'meal' },
-  { time: '13:00', event: '개인 학습 & 전문서적 독서 (60분)', category: 'study' },
-  { time: '14:00', event: '2차 딥워크: AI 개발 및 리서치 (90분)', category: 'productivity' },
-  { time: '17:00', event: '피트니스 운동 & 러닝 (45분)', category: 'fitness' },
-  { time: '18:30', event: '저녁 식사', category: 'meal' },
-  { time: '20:00', event: '개인 여가 시간 & 취미 생활', category: 'leisure' },
-  { time: '22:00', event: '내일 일정 계획 & Obsidian 일기', category: 'study' },
-  { time: '22:30', event: '스크린 오프 & 수면 준비', category: 'night' },
+const AI_SCHEDULE_PRESETS = [
+  {
+    id: 'workday',
+    title: '💼 평일 집중 근무일',
+    desc: '딥워크 2회(오전/오후)와 집중 업무, 규칙적인 식사 및 운동 루틴',
+    icon: Briefcase,
+    color: 'purple',
+    items: [
+      { time: '06:30', event: '기상 & 미온수 수분 보충 (500ml)', category: 'fitness' },
+      { time: '07:00', event: '아침 스트레칭 & 명상 10분', category: 'night' },
+      { time: '08:00', event: '건강식 아침 식사 (단백질/그릭요거트)', category: 'meal' },
+      { time: '09:00', event: '1차 딥워크: 핵심 프로젝트 집중 (90분)', category: 'productivity' },
+      { time: '10:30', event: '가벼운 산책 & 수분 보충', category: 'fitness' },
+      { time: '12:00', event: '점심 식사 & 15분 햇볕 산책', category: 'meal' },
+      { time: '13:00', event: '업무 관련 리서치 & 지식 습득', category: 'study' },
+      { time: '14:00', event: '2차 딥워크: AI 개발 및 리서치 (90분)', category: 'productivity' },
+      { time: '17:00', event: '피트니스 운동 & 체력 단련 (45분)', category: 'fitness' },
+      { time: '18:30', event: '저녁 식사', category: 'meal' },
+      { time: '20:00', event: '개인 여가 시간 & 릴랙스', category: 'leisure' },
+      { time: '22:00', event: '내일 일정 계획 & Obsidian 일기', category: 'study' },
+      { time: '22:30', event: '스크린 오프 & 수면 준비', category: 'night' },
+    ]
+  },
+  {
+    id: 'weekend',
+    title: '🌴 주말 & 공휴일 재충전',
+    desc: '여유로운 수면, 브런치, 야외 활동, 여가생활과 저녁 모임 루틴',
+    icon: Sun,
+    color: 'emerald',
+    items: [
+      { time: '08:00', event: '여유로운 기상 & 가벼운 스트레칭', category: 'night' },
+      { time: '09:30', event: '브런치 & 모닝 커피 타임', category: 'meal' },
+      { time: '11:00', event: '야외 산책 / 가벼운 조깅 (자연 힐링)', category: 'fitness' },
+      { time: '13:00', event: '카페 여유 & 관심분야 독서', category: 'study' },
+      { time: '15:00', event: '취미 생활 & 엔터테인먼트 여가', category: 'leisure' },
+      { time: '18:00', event: '친구 / 가족과의 저녁 식사 & 약속', category: 'appointment' },
+      { time: '21:00', event: '홈케어 & 음악 감상 릴랙스', category: 'leisure' },
+      { time: '23:00', event: '편안한 숙면 준비', category: 'night' },
+    ]
+  },
+  {
+    id: 'study_day',
+    title: '🔥 자기계발 & 학습 몰입일',
+    desc: '전공/시험/자격증 공부, 사이드 프로젝트, 지식 아카이빙 집중 루틴',
+    icon: BookOpen,
+    color: 'cyan',
+    items: [
+      { time: '07:00', event: '기상 & 모닝 루틴', category: 'fitness' },
+      { time: '08:00', event: '두뇌 활성화 아침 식사', category: 'meal' },
+      { time: '09:00', event: '1차 학습: 전문 서적 & 핵심 이론 (120분)', category: 'study' },
+      { time: '11:30', event: '눈 휴식 & 전신 스트레칭', category: 'fitness' },
+      { time: '12:30', event: '점심 식사 & 산책', category: 'meal' },
+      { time: '14:00', event: '2차 몰입: 실전 프로젝트 & 문제 해결 (120분)', category: 'productivity' },
+      { time: '16:30', event: '유산소 운동 세션 (30분)', category: 'fitness' },
+      { time: '18:30', event: '저녁 식사', category: 'meal' },
+      { time: '20:00', event: '온라인 강의 수강 & 노트 정리', category: 'study' },
+      { time: '22:00', event: '하루 학습 요약 & Obsidian 지식 정리', category: 'study' },
+      { time: '22:30', event: '수면 준비', category: 'night' },
+    ]
+  },
+  {
+    id: 'wellness',
+    title: '🌿 웰니스 & 힐링 데이',
+    desc: '신체 회복, 사우나, 클린 식단, 멘탈 케어와 충분한 수면 중심 루틴',
+    icon: HeartPulse,
+    color: 'teal',
+    items: [
+      { time: '07:30', event: '자연 채광 기상 & 따뜻한 차 한 잔', category: 'night' },
+      { time: '08:30', event: '가벼운 샐러드/클린 푸드 아침 식사', category: 'meal' },
+      { time: '10:00', event: '야외 등산 / 러닝 / 라이딩 (유산소)', category: 'fitness' },
+      { time: '12:30', event: '영양 균형 점심 식사', category: 'meal' },
+      { time: '14:00', event: '사우나 / 반신욕 신체 회복 힐링', category: 'fitness' },
+      { time: '16:30', event: '조용한 카페 음악 감상 & 사색', category: 'leisure' },
+      { time: '18:30', event: '가벼운 저녁 식사', category: 'meal' },
+      { time: '20:00', event: '폼롤러 마사지 & 힐링 명상', category: 'night' },
+      { time: '22:00', event: '스크린 완전 오프 & 조기 취침', category: 'night' },
+    ]
+  }
 ];
 
 const DEFAULT_TIMEBLOCKS = [
@@ -71,6 +136,9 @@ export function DailyRoutines({
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [newBlock, setNewBlock] = useState({ time: '10:00', event: '', category: 'productivity' });
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState('workday');
+
+  const selectedPreset = AI_SCHEDULE_PRESETS.find(p => p.id === selectedPresetId) || AI_SCHEDULE_PRESETS[0];
 
   const saveTimeblocks = (updated) => {
     const sorted = [...updated].sort((a, b) => a.time.localeCompare(b.time));
@@ -100,8 +168,8 @@ export function DailyRoutines({
     setShowAddBlock(false);
   };
 
-  const applyAiTemplate = () => {
-    saveTimeblocks(AI_TEMPLATES.map((t, i) => ({ ...t, id: `ai-${i}` })));
+  const applySelectedAiTemplate = () => {
+    saveTimeblocks(selectedPreset.items.map((t, i) => ({ ...t, id: `ai-${selectedPreset.id}-${i}` })));
     setShowAiPanel(false);
   };
 
@@ -290,10 +358,10 @@ export function DailyRoutines({
               <button 
                 className={`btn btn-sm ${showAiPanel ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setShowAiPanel(!showAiPanel)}
-                title="AI 최적 하루 스케줄 템플릿 추천"
+                title="상황별 AI 맞춤 하루 스케줄 추천"
               >
                 <Sparkles size={13} />
-                <span>AI 추천</span>
+                <span>AI 상황별 추천</span>
               </button>
               <button 
                 className="btn btn-secondary btn-sm"
@@ -305,34 +373,71 @@ export function DailyRoutines({
             </div>
           </div>
 
-          {/* AI Schedule Template Recommendation Panel */}
+          {/* AI Schedule Template Recommendation Panel with 4 selectable presets */}
           {showAiPanel && (
-            <div className="ai-template-panel glass-card p-3 mb-3 border border-purple-500/30">
-              <div className="ai-panel-header flex items-center gap-1">
-                <Sparkles size={14} className="text-purple" />
-                <span className="text-xs font-bold text-highlight">✨ AI 최적 하루 루틴 스케줄 추천</span>
+            <div className="ai-template-panel glass-card p-3 mb-3 border border-purple-500/40">
+              <div className="ai-panel-header flex items-center justify-between pb-2 border-b border-white/10">
+                <div className="flex items-center gap-1">
+                  <Sparkles size={15} className="text-purple" />
+                  <span className="text-xs font-bold text-highlight">✨ AI 상황별 최적 하루 스케줄 추천</span>
+                </div>
+                <button className="btn-icon" onClick={() => setShowAiPanel(false)}>
+                  <X size={14} />
+                </button>
               </div>
-              <p className="text-muted text-xs mt-1 mb-2">
-                딥워크 2회(오전/오후)와 식사, 운동, 학습, 취침이 최적 배분된 13개 일정 템플릿입니다. 적용 시 현재 타임블록이 교체됩니다.
-              </p>
-              <div className="ai-preview-list max-h-36 overflow-y-auto pr-1 space-y-1">
-                {AI_TEMPLATES.map((t, i) => {
-                  const cat = getCatById(t.category);
+
+              {/* 4 Selectable Preset Chips */}
+              <div className="preset-selector-row grid grid-cols-2 gap-1.5 mt-2">
+                {AI_SCHEDULE_PRESETS.map(preset => {
+                  const isSelected = selectedPresetId === preset.id;
                   return (
-                    <div key={i} className="ai-preview-row flex items-center justify-between text-xs py-0.5">
-                      <span className="mono text-muted">{t.time}</span>
-                      <span className="text-highlight truncate px-2">{cat.emoji} {t.event}</span>
-                      <span className={`badge badge-${cat.color} text-xs`}>{cat.label}</span>
-                    </div>
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`preset-chip-btn text-left p-2 rounded-md transition-all ${
+                        isSelected 
+                          ? 'bg-purple-500/20 border border-purple-500 text-highlight shadow-sm' 
+                          : 'bg-white/5 border border-white/5 text-muted hover:bg-white/10'
+                      }`}
+                      onClick={() => setSelectedPresetId(preset.id)}
+                    >
+                      <div className="font-bold text-xs">{preset.title}</div>
+                      <div className="text-2xs text-muted truncate">{preset.desc}</div>
+                    </button>
                   );
                 })}
               </div>
-              <div className="flex gap-2 mt-3">
-                <button className="btn btn-primary btn-sm flex-1" onClick={applyAiTemplate}>
-                  <Sparkles size={13} /> 템플릿 전체 적용
-                </button>
+
+              {/* Preview of Selected Preset Items */}
+              <div className="preset-preview-box mt-3 p-2 bg-black/40 rounded-lg border border-white/5">
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <span className="text-xs font-bold text-cyan">
+                    {selectedPreset.title} ({selectedPreset.items.length}개 타임블록)
+                  </span>
+                  <span className="text-2xs text-muted">미리보기</span>
+                </div>
+
+                <div className="ai-preview-list max-h-36 overflow-y-auto pr-1 space-y-1">
+                  {selectedPreset.items.map((t, i) => {
+                    const cat = getCatById(t.category);
+                    return (
+                      <div key={i} className="ai-preview-row flex items-center justify-between text-xs py-1 px-1.5 rounded bg-white/5">
+                        <span className="mono text-muted text-2xs w-12">{t.time}</span>
+                        <span className="text-highlight truncate flex-1 px-2">{cat.emoji} {t.event}</span>
+                        <span className={`badge badge-${cat.color} text-2xs`}>{cat.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-3 pt-2 border-t border-white/10">
                 <button className="btn btn-secondary btn-sm" onClick={() => setShowAiPanel(false)}>
                   취소
+                </button>
+                <button className="btn btn-primary btn-sm flex-1 font-bold" onClick={applySelectedAiTemplate}>
+                  <Sparkles size={13} />
+                  <span>{selectedPreset.title} 전체 적용하기</span>
                 </button>
               </div>
             </div>
