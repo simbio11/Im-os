@@ -1,203 +1,26 @@
-// Initial Seed Data & Sample Intelligence for L&M OS
-
+// Clean Initial User Seed Data for Distribution
 export const INITIAL_USER_PROFILE = {
-  name: "Neo Commander",
+  name: "Commander",
   tier: "입만 산 애송이",
   level: 1,
   xp: 0,
-  xpToNextLevel: 142,
-  streak: 1,
-  monthlyIncome: 6500000, // 650만원
-  fixedCosts: 1850000, // 185만원 (월세, 대출이자, 고정보험, 통신비 등)
-  monthlyInvestmentTarget: 3000000 // 목표 300만원
+  xpToNextLevel: 100,
+  streak: 0,
+  monthlyIncome: 0,
+  fixedCosts: 0,
+  monthlyInvestmentTarget: 0
 };
 
-export const INITIAL_ROUTINES = [
-  {
-    id: "r1",
-    category: "morning",
-    title: "아침 프로토콜: 미온수 500ml + 전해질 & 오메가3/비타민D 섭취",
-    time: "06:30 - 07:00",
-    completed: true,
-    xp: 25,
-    streak: 12
-  },
-  {
-    id: "r2",
-    category: "morning",
-    title: "장전 AM 매크로 브리핑 & 지수 점검 (Obsidian 동기화)",
-    time: "07:00 - 07:30",
-    completed: true,
-    xp: 30,
-    streak: 12
-  },
-  {
-    id: "r3",
-    category: "fitness",
-    title: "주 4회 필수 5km 러닝 (Zone 2~3 페이스 유지)",
-    time: "07:30 - 08:15",
-    completed: true,
-    xp: 60,
-    streak: 8
-  },
-  {
-    id: "r4",
-    category: "deepwork",
-    title: "오전 1차 딥워크: 핵심 엔지니어링 / 시스템 아키텍처 설계 (90분)",
-    time: "09:30 - 11:00",
-    completed: true,
-    xp: 50,
-    streak: 15
-  },
-  {
-    id: "r5",
-    category: "deepwork",
-    title: "오후 2차 딥워크: AI 에이전트 & RAG 파이프라인 개발",
-    time: "14:00 - 16:00",
-    completed: false,
-    xp: 50,
-    streak: 10
-  },
-  {
-    id: "r6",
-    category: "market",
-    title: "장후 PM 오선 브리핑 & 텔레그램 채널 요약 분석",
-    time: "18:30 - 19:00",
-    completed: false,
-    xp: 30,
-    streak: 11
-  },
-  {
-    id: "r7",
-    category: "night",
-    title: "야간 회고 & Obsidian 데일리 노트 마감 + 스크린 오프",
-    time: "22:30 - 23:00",
-    completed: false,
-    xp: 35,
-    streak: 9
-  }
-];
+export const INITIAL_ROUTINES = [];
 
-export const TIMEBLOCK_SCHEDULE = [
-  { time: "06:30", event: "기상 & 미온수 + 전해질", category: "morning" },
-  { time: "07:00", event: "장전 AM 매크로 브리핑", category: "market" },
-  { time: "07:30", event: "5km 모닝 러닝 & 샤워", category: "fitness" },
-  { time: "08:30", event: "건강식 아침 식사 (그릭요거트/단백질)", category: "diet" },
-  { time: "09:30", event: "1차 딥워크: 핵심 프로젝트", category: "deepwork" },
-  { time: "12:00", event: "점심 식사 & 15분 가벼운 산책", category: "diet" },
-  { time: "14:00", event: "2차 딥워크: AI 파이프라인 개발", category: "deepwork" },
-  { time: "17:00", event: "피트니스 & 스트레칭 세션", category: "fitness" },
-  { time: "18:30", event: "장후 PM 마켓 브리핑 & 리포트", category: "market" },
-  { time: "20:00", event: "저녁 식사 & 개인 독서/학습", category: "personal" },
-  { time: "22:30", event: "Obsidian 데일리 노트 마감 및 수면 준비", category: "night" }
-];
+export const TIMEBLOCK_SCHEDULE = [];
 
-export const INITIAL_DIET_LOGS = [
-  {
-    id: "d1",
-    mealType: "아침",
-    time: "08:30",
-    rawText: "무가당 그릭요거트 100g, 바나나 1개, 하루견과 1봉",
-    kcal: 355,
-    carbs: 36,
-    protein: 16.3,
-    fat: 17.8
-  },
-  {
-    id: "d2",
-    mealType: "점심",
-    time: "12:30",
-    rawText: "점심 제육볶음 1인분, 밥 2/3공기, 계란후라이 1개",
-    kcal: 755,
-    carbs: 59.9,
-    protein: 42.5,
-    fat: 37.8
-  }
-];
+export const INITIAL_DIET_LOGS = [];
 
-export const INITIAL_RUNNING_LOGS = [
-  {
-    id: "run1",
-    date: "2026-08-26",
-    distance: 5.02, // km
-    durationMinutes: 26.5, // 26분 30초
-    pace: "5'16\"",
-    conditionScore: 4, // 1~5점
-    fatigueScore: 2, // 1~5점 (낮을수록 좋음)
-    heartRateAvg: 148,
-    notes: "초반 2km 가볍게 빌드업, 후반 3km 5분대 초반 페이스 유지. 호흡 쾌적."
-  },
-  {
-    id: "run2",
-    date: "2026-08-24",
-    distance: 5.15,
-    durationMinutes: 28.1,
-    pace: "5'27\"",
-    conditionScore: 5,
-    fatigueScore: 1,
-    heartRateAvg: 142,
-    notes: "페이스 제어 완벽. 주간 목표 2회차 달성."
-  },
-  {
-    id: "run3",
-    date: "2026-08-22",
-    distance: 5.0,
-    durationMinutes: 27.4,
-    pace: "5'28\"",
-    conditionScore: 3,
-    fatigueScore: 3,
-    heartRateAvg: 152,
-    notes: "전날 야근으로 피로도 살짝 있었으나 안정적으로 완주."
-  }
-];
+export const INITIAL_RUNNING_LOGS = [];
 
-export const INITIAL_EXPENSES = [
-  {
-    id: "e1",
-    date: "2026-08-26",
-    merchant: "스타벅스 리저브",
-    category: "식비/카페",
-    amount: 6500,
-    paymentMethod: "신한카드",
-    isFixed: false
-  },
-  {
-    id: "e2",
-    date: "2026-08-26",
-    merchant: "배달의민족 (단백질 샐러드)",
-    category: "식비",
-    amount: 14500,
-    paymentMethod: "현대카드",
-    isFixed: false
-  },
-  {
-    id: "e3",
-    date: "2026-08-25",
-    merchant: "교보문고 (AI 엔지니어링 도서)",
-    category: "자기계발/도서",
-    amount: 38000,
-    paymentMethod: "네이버페이",
-    isFixed: false
-  },
-  {
-    id: "e4",
-    date: "2026-08-24",
-    merchant: "쿠팡 로켓프레시 (닭가슴살/야채)",
-    category: "식비/장보기",
-    amount: 54200,
-    paymentMethod: "신한카드",
-    isFixed: false
-  },
-  {
-    id: "e5",
-    date: "2026-08-20",
-    merchant: "토스증권 해외주식 적립식 매수 (QQQ, NVDA)",
-    category: "투자/자산",
-    amount: 800000,
-    paymentMethod: "계좌이체",
-    isFixed: false
-  }
-];
+export const INITIAL_EXPENSES = [];
+
 
 // Market & Macro Intelligence Data
 export const MACRO_4_INDICATORS = [

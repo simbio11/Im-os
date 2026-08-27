@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   CheckCircle2, Circle, Clock, Plus, Flame, Zap, Calendar,
   FileText, CheckSquare, Trash2, Edit3, Sparkles, X, Save,
-  Briefcase, Sun, BookOpen, HeartPulse
+  Briefcase, Sun, BookOpen, HeartPulse, Check
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -24,6 +24,7 @@ const AI_SCHEDULE_PRESETS = [
     desc: '딥워크 2회(오전/오후)와 집중 업무, 규칙적인 식사 및 운동 루틴',
     icon: Briefcase,
     color: 'purple',
+    accentClass: 'border-purple-500/40 bg-purple-500/10 text-purple-400',
     items: [
       { time: '06:30', event: '기상 & 미온수 수분 보충 (500ml)', category: 'fitness' },
       { time: '07:00', event: '아침 스트레칭 & 명상 10분', category: 'night' },
@@ -46,6 +47,7 @@ const AI_SCHEDULE_PRESETS = [
     desc: '여유로운 수면, 브런치, 야외 활동, 여가생활과 저녁 모임 루틴',
     icon: Sun,
     color: 'emerald',
+    accentClass: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400',
     items: [
       { time: '08:00', event: '여유로운 기상 & 가벼운 스트레칭', category: 'night' },
       { time: '09:30', event: '브런치 & 모닝 커피 타임', category: 'meal' },
@@ -63,6 +65,7 @@ const AI_SCHEDULE_PRESETS = [
     desc: '전공/시험/자격증 공부, 사이드 프로젝트, 지식 아카이빙 집중 루틴',
     icon: BookOpen,
     color: 'cyan',
+    accentClass: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-400',
     items: [
       { time: '07:00', event: '기상 & 모닝 루틴', category: 'fitness' },
       { time: '08:00', event: '두뇌 활성화 아침 식사', category: 'meal' },
@@ -83,6 +86,7 @@ const AI_SCHEDULE_PRESETS = [
     desc: '신체 회복, 사우나, 클린 식단, 멘탈 케어와 충분한 수면 중심 루틴',
     icon: HeartPulse,
     color: 'teal',
+    accentClass: 'border-teal-500/40 bg-teal-500/10 text-teal-400',
     items: [
       { time: '07:30', event: '자연 채광 기상 & 따뜻한 차 한 잔', category: 'night' },
       { time: '08:30', event: '가벼운 샐러드/클린 푸드 아침 식사', category: 'meal' },
@@ -97,20 +101,8 @@ const AI_SCHEDULE_PRESETS = [
   }
 ];
 
-const DEFAULT_TIMEBLOCKS = [
-  { id: 'tb1', time: '06:30', event: '기상 & 미온수 + 전해질', category: 'fitness' },
-  { id: 'tb2', time: '08:00', event: '건강식 아침 식사', category: 'meal' },
-  { id: 'tb3', time: '09:30', event: '1차 딥워크: 핵심 프로젝트', category: 'productivity' },
-  { id: 'tb4', time: '12:00', event: '점심 식사 & 15분 산책', category: 'meal' },
-  { id: 'tb5', time: '14:00', event: '2차 딥워크: AI 개발', category: 'productivity' },
-  { id: 'tb6', time: '17:00', event: '피트니스 & 스트레칭', category: 'fitness' },
-  { id: 'tb7', time: '18:30', event: '저녁 식사', category: 'meal' },
-  { id: 'tb8', time: '20:00', event: '개인 독서 & 학습', category: 'study' },
-  { id: 'tb9', time: '22:30', event: 'Obsidian 마감 & 수면 준비', category: 'night' },
-];
-
 export function DailyRoutines({ 
-  routines, 
+  routines = [], 
   onToggleRoutine, 
   onAddRoutine, 
   onDeleteRoutine, 
@@ -125,9 +117,9 @@ export function DailyRoutines({
   const [timeblocks, setTimeblocks] = useState(() => {
     try {
       const saved = localStorage.getItem('lm_timeblocks');
-      return saved ? JSON.parse(saved) : DEFAULT_TIMEBLOCKS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_TIMEBLOCKS;
+      return [];
     }
   });
 
@@ -135,7 +127,7 @@ export function DailyRoutines({
   const [editBlockData, setEditBlockData] = useState({});
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [newBlock, setNewBlock] = useState({ time: '10:00', event: '', category: 'productivity' });
-  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState('workday');
 
   const selectedPreset = AI_SCHEDULE_PRESETS.find(p => p.id === selectedPresetId) || AI_SCHEDULE_PRESETS[0];
@@ -170,13 +162,14 @@ export function DailyRoutines({
 
   const applySelectedAiTemplate = () => {
     saveTimeblocks(selectedPreset.items.map((t, i) => ({ ...t, id: `ai-${selectedPreset.id}-${i}` })));
-    setShowAiPanel(false);
+    setIsAiModalOpen(false);
   };
 
-  const completedCount = routines.filter(r => r.completed).length;
-  const totalCount = routines.length;
+  const safeRoutines = Array.isArray(routines) ? routines : [];
+  const completedCount = safeRoutines.filter(r => r.completed).length;
+  const totalCount = safeRoutines.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const totalEarnedXP = routines.filter(r => r.completed).reduce((acc, r) => acc + r.xp, 0);
+  const totalEarnedXP = safeRoutines.filter(r => r.completed).reduce((acc, r) => acc + (r.xp || 0), 0);
 
   const handleAddSubmit = (e) => {
     e.preventDefault();
@@ -290,60 +283,68 @@ export function DailyRoutines({
           )}
 
           <div className="routine-items-list">
-            {routines.map(routine => {
-              const cat = getCatById(routine.category);
-              return (
-                <div 
-                  key={routine.id} 
-                  className={`routine-item ${routine.completed ? 'completed' : ''}`}
-                  onClick={() => onToggleRoutine(routine.id)}
-                >
-                  <div className="routine-checkbox">
-                    {routine.completed ? (
-                      <CheckCircle2 size={20} className="text-emerald" />
-                    ) : (
-                      <Circle size={20} className="text-faint" />
-                    )}
-                  </div>
-
-                  <div className="routine-info">
-                    <div className="routine-title-row">
-                      <span className={`routine-title ${routine.completed ? 'line-through text-muted' : ''}`}>
-                        {cat.emoji} {routine.title}
-                      </span>
-                      <span className={`badge badge-${cat.color}`}>
-                        {cat.label}
-                      </span>
-                    </div>
-
-                    <div className="routine-meta-row">
-                      <span className="routine-time mono text-muted text-xs">
-                        <Clock size={11} /> {routine.time}
-                      </span>
-                      <span className="routine-xp mono text-amber text-xs">
-                        +{routine.xp} XP
-                      </span>
-                      {routine.streak > 0 && (
-                        <span className="routine-streak text-xs text-rose">
-                          <Flame size={12} /> {routine.streak}일 연속
-                        </span>
+            {safeRoutines.length === 0 ? (
+              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
+                <CheckSquare size={36} className="text-muted/50 mb-2" />
+                <p className="text-muted text-xs font-medium">등록된 데일리 루틴이 없습니다.</p>
+                <p className="text-muted/60 text-2xs mt-1">상단 [+ 루틴 추가] 버튼을 눌러 하루 프로토콜을 등록해보세요.</p>
+              </div>
+            ) : (
+              safeRoutines.map(routine => {
+                const cat = getCatById(routine.category);
+                return (
+                  <div 
+                    key={routine.id} 
+                    className={`routine-item ${routine.completed ? 'completed' : ''}`}
+                    onClick={() => onToggleRoutine(routine.id)}
+                  >
+                    <div className="routine-checkbox">
+                      {routine.completed ? (
+                        <CheckCircle2 size={20} className="text-emerald" />
+                      ) : (
+                        <Circle size={20} className="text-faint" />
                       )}
                     </div>
-                  </div>
 
-                  <button 
-                    className="btn-icon btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteRoutine(routine.id);
-                    }}
-                    title="루틴 삭제"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              );
-            })}
+                    <div className="routine-info">
+                      <div className="routine-title-row">
+                        <span className={`routine-title ${routine.completed ? 'line-through text-muted' : ''}`}>
+                          {cat.emoji} {routine.title}
+                        </span>
+                        <span className={`badge badge-${cat.color}`}>
+                          {cat.label}
+                        </span>
+                      </div>
+
+                      <div className="routine-meta-row">
+                        <span className="routine-time mono text-muted text-xs">
+                          <Clock size={11} /> {routine.time}
+                        </span>
+                        <span className="routine-xp mono text-amber text-xs">
+                          +{routine.xp} XP
+                        </span>
+                        {routine.streak > 0 && (
+                          <span className="routine-streak text-xs text-rose">
+                            <Flame size={12} /> {routine.streak}일 연속
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <button 
+                      className="btn-icon btn-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteRoutine(routine.id);
+                      }}
+                      title="루틴 삭제"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -356,8 +357,8 @@ export function DailyRoutines({
             </div>
             <div className="flex gap-2">
               <button 
-                className={`btn btn-sm ${showAiPanel ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setShowAiPanel(!showAiPanel)}
+                className="btn btn-sm btn-primary glowing-btn"
+                onClick={() => setIsAiModalOpen(true)}
                 title="상황별 AI 맞춤 하루 스케줄 추천"
               >
                 <Sparkles size={13} />
@@ -372,76 +373,6 @@ export function DailyRoutines({
               </button>
             </div>
           </div>
-
-          {/* AI Schedule Template Recommendation Panel with 4 selectable presets */}
-          {showAiPanel && (
-            <div className="ai-template-panel glass-card p-3 mb-3 border border-purple-500/40">
-              <div className="ai-panel-header flex items-center justify-between pb-2 border-b border-white/10">
-                <div className="flex items-center gap-1">
-                  <Sparkles size={15} className="text-purple" />
-                  <span className="text-xs font-bold text-highlight">✨ AI 상황별 최적 하루 스케줄 추천</span>
-                </div>
-                <button className="btn-icon" onClick={() => setShowAiPanel(false)}>
-                  <X size={14} />
-                </button>
-              </div>
-
-              {/* 4 Selectable Preset Chips */}
-              <div className="preset-selector-row grid grid-cols-2 gap-1.5 mt-2">
-                {AI_SCHEDULE_PRESETS.map(preset => {
-                  const isSelected = selectedPresetId === preset.id;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={`preset-chip-btn text-left p-2 rounded-md transition-all ${
-                        isSelected 
-                          ? 'bg-purple-500/20 border border-purple-500 text-highlight shadow-sm' 
-                          : 'bg-white/5 border border-white/5 text-muted hover:bg-white/10'
-                      }`}
-                      onClick={() => setSelectedPresetId(preset.id)}
-                    >
-                      <div className="font-bold text-xs">{preset.title}</div>
-                      <div className="text-2xs text-muted truncate">{preset.desc}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Preview of Selected Preset Items */}
-              <div className="preset-preview-box mt-3 p-2 bg-black/40 rounded-lg border border-white/5">
-                <div className="flex items-center justify-between mb-1.5 px-1">
-                  <span className="text-xs font-bold text-cyan">
-                    {selectedPreset.title} ({selectedPreset.items.length}개 타임블록)
-                  </span>
-                  <span className="text-2xs text-muted">미리보기</span>
-                </div>
-
-                <div className="ai-preview-list max-h-36 overflow-y-auto pr-1 space-y-1">
-                  {selectedPreset.items.map((t, i) => {
-                    const cat = getCatById(t.category);
-                    return (
-                      <div key={i} className="ai-preview-row flex items-center justify-between text-xs py-1 px-1.5 rounded bg-white/5">
-                        <span className="mono text-muted text-2xs w-12">{t.time}</span>
-                        <span className="text-highlight truncate flex-1 px-2">{cat.emoji} {t.event}</span>
-                        <span className={`badge badge-${cat.color} text-2xs`}>{cat.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-3 pt-2 border-t border-white/10">
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowAiPanel(false)}>
-                  취소
-                </button>
-                <button className="btn btn-primary btn-sm flex-1 font-bold" onClick={applySelectedAiTemplate}>
-                  <Sparkles size={13} />
-                  <span>{selectedPreset.title} 전체 적용하기</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Add New Timeblock Form */}
           {showAddBlock && (
@@ -481,78 +412,187 @@ export function DailyRoutines({
             </div>
           )}
 
-          {/* Timeline Nodes */}
+          {/* Timeline Nodes or Clean Empty State */}
           <div className="timeblock-timeline">
-            {timeblocks.map(block => {
-              const cat = getCatById(block.category);
-              const isEditing = editingBlock === block.id;
+            {timeblocks.length === 0 ? (
+              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
+                <Calendar size={36} className="text-muted/50 mb-2" />
+                <p className="text-muted text-xs font-medium">등록된 24h 타임블록이 없습니다.</p>
+                <p className="text-muted/60 text-2xs mt-1 mb-3">상황에 맞는 최적 하루 스케줄을 AI 추천으로 바로 완성해보세요.</p>
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setIsAiModalOpen(true)}
+                >
+                  <Sparkles size={13} />
+                  <span>AI 추천 스케줄 둘러보기</span>
+                </button>
+              </div>
+            ) : (
+              timeblocks.map(block => {
+                const cat = getCatById(block.category);
+                const isEditing = editingBlock === block.id;
 
-              return (
-                <div key={block.id} className="timeline-node">
-                  {isEditing ? (
-                    <div className="timeline-edit-row flex items-center gap-2 w-full">
-                      <input 
-                        type="time" 
-                        className="input-text node-time-input w-24" 
-                        value={editBlockData.time} 
-                        onChange={e => setEditBlockData(p => ({ ...p, time: e.target.value }))} 
-                      />
-                      <input 
-                        type="text" 
-                        autoFocus 
-                        className="input-text flex-1" 
-                        value={editBlockData.event} 
-                        onChange={e => setEditBlockData(p => ({ ...p, event: e.target.value }))} 
-                        onKeyDown={e => e.key === 'Enter' && commitEditBlock(block.id)} 
-                      />
-                      <select 
-                        className="select-input" 
-                        value={editBlockData.category} 
-                        onChange={e => setEditBlockData(p => ({ ...p, category: e.target.value }))}
-                      >
-                        {CATEGORIES.map(c => (
-                          <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-                        ))}
-                      </select>
-                      <button className="btn btn-primary btn-sm" onClick={() => commitEditBlock(block.id)}>
-                        <Save size={12} />
-                      </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setEditingBlock(null)}>
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="node-time mono">{block.time}</div>
-                      <div className={`node-connector ${cat.color}`}></div>
-                      <div className="node-card flex-1">
-                        <div className="node-event-title">{cat.emoji} {block.event}</div>
-                        <span className={`badge badge-${cat.color} text-xs`}>{cat.label}</span>
-                      </div>
-                      <div className="node-actions flex items-center gap-1">
-                        <button 
-                          className="btn-icon" 
-                          onClick={() => startEditBlock(block)}
-                          title="일정 수정"
+                return (
+                  <div key={block.id} className="timeline-node">
+                    {isEditing ? (
+                      <div className="timeline-edit-row flex items-center gap-2 w-full">
+                        <input 
+                          type="time" 
+                          className="input-text node-time-input w-24" 
+                          value={editBlockData.time} 
+                          onChange={e => setEditBlockData(p => ({ ...p, time: e.target.value }))} 
+                        />
+                        <input 
+                          type="text" 
+                          autoFocus 
+                          className="input-text flex-1" 
+                          value={editBlockData.event} 
+                          onChange={e => setEditBlockData(p => ({ ...p, event: e.target.value }))} 
+                          onKeyDown={e => e.key === 'Enter' && commitEditBlock(block.id)} 
+                        />
+                        <select 
+                          className="select-input" 
+                          value={editBlockData.category} 
+                          onChange={e => setEditBlockData(p => ({ ...p, category: e.target.value }))}
                         >
-                          <Edit3 size={12} />
+                          {CATEGORIES.map(c => (
+                            <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                          ))}
+                        </select>
+                        <button className="btn btn-primary btn-sm" onClick={() => commitEditBlock(block.id)}>
+                          <Save size={12} />
                         </button>
-                        <button 
-                          className="btn-icon btn-delete" 
-                          onClick={() => deleteBlock(block.id)}
-                          title="일정 삭제"
-                        >
-                          <Trash2 size={12} />
+                        <button className="btn btn-secondary btn-sm" onClick={() => setEditingBlock(null)}>
+                          <X size={12} />
                         </button>
                       </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+                    ) : (
+                      <>
+                        <div className="node-time mono">{block.time}</div>
+                        <div className={`node-connector ${cat.color}`}></div>
+                        <div className="node-card flex-1">
+                          <div className="node-event-title">{cat.emoji} {block.event}</div>
+                          <span className={`badge badge-${cat.color} text-xs`}>{cat.label}</span>
+                        </div>
+                        <div className="node-actions flex items-center gap-1">
+                          <button 
+                            className="btn-icon" 
+                            onClick={() => startEditBlock(block)}
+                            title="일정 수정"
+                          >
+                            <Edit3 size={12} />
+                          </button>
+                          <button 
+                            className="btn-icon btn-delete" 
+                            onClick={() => deleteBlock(block.id)}
+                            title="일정 삭제"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
+
+      {/* 🌟 ULTRA-SLEEK GLASS MODAL FOR AI SCHEDULE PRESETS */}
+      {isAiModalOpen && (
+        <div className="modal-backdrop-blur" onClick={() => setIsAiModalOpen(false)}>
+          <div className="ai-schedule-modal-card glass-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-top-bar flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="modal-icon-badge bg-purple-500/20 text-purple-400 p-2 rounded-lg">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-highlight">✨ AI 상황별 최적 하루 스케줄 추천</h4>
+                  <p className="text-muted text-xs">오늘의 상황에 알맞은 프리셋을 선택하고 한 번에 적용하세요.</p>
+                </div>
+              </div>
+              <button className="btn-icon" onClick={() => setIsAiModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 4 Selectable Preset Cards */}
+            <div className="preset-cards-grid grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
+              {AI_SCHEDULE_PRESETS.map(preset => {
+                const isSelected = selectedPresetId === preset.id;
+                const IconComponent = preset.icon;
+
+                return (
+                  <div
+                    key={preset.id}
+                    className={`preset-select-card glass-card p-3 cursor-pointer transition-all ${
+                      isSelected 
+                        ? `active-preset-card border-${preset.color}-500/60 shadow-lg shadow-${preset.color}-500/10` 
+                        : 'hover:border-white/20'
+                    }`}
+                    onClick={() => setSelectedPresetId(preset.id)}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1.5 rounded-md bg-${preset.color}-500/20 text-${preset.color}-400`}>
+                          <IconComponent size={16} />
+                        </div>
+                        <span className="font-bold text-xs text-highlight">{preset.title}</span>
+                      </div>
+                      {isSelected && (
+                        <div className="select-check-badge">
+                          <Check size={13} />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-muted text-2xs leading-relaxed">{preset.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Preview of Selected Preset Items */}
+            <div className="preset-preview-container mt-4 p-3 bg-black/40 rounded-xl border border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-cyan flex items-center gap-1">
+                  <span>{selectedPreset.title} 타임라인 미리보기</span>
+                  <span className="badge badge-cyan text-2xs">{selectedPreset.items.length}개 블록</span>
+                </span>
+                <span className="text-2xs text-muted">선택 시 즉시 반영</span>
+              </div>
+
+              <div className="ai-modal-preview-list max-h-48 overflow-y-auto pr-1.5 space-y-1.5">
+                {selectedPreset.items.map((t, i) => {
+                  const cat = getCatById(t.category);
+                  return (
+                    <div key={i} className="preview-schedule-row flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-white/5 border border-white/5">
+                      <span className="mono text-muted text-2xs w-12 font-bold">{t.time}</span>
+                      <span className="text-highlight truncate flex-1 px-2">{cat.emoji} {t.event}</span>
+                      <span className={`badge badge-${cat.color} text-2xs`}>{cat.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="modal-footer-actions flex justify-end gap-2.5 mt-5 pt-3 border-t border-white/10">
+              <button className="btn btn-secondary" onClick={() => setIsAiModalOpen(false)}>
+                닫기
+              </button>
+              <button 
+                className="btn btn-primary px-5 font-bold glowing-btn" 
+                onClick={applySelectedAiTemplate}
+              >
+                <Sparkles size={15} />
+                <span>{selectedPreset.title} 전체 적용하기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

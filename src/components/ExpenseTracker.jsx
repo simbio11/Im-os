@@ -18,7 +18,10 @@ import {
   Check,
   X,
   Sliders,
-  Settings
+  Settings,
+  Coins,
+  Building,
+  Target
 } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
@@ -37,28 +40,28 @@ export function ExpenseTracker({
   const [smsInput, setSmsInput] = useState('');
   const [previewParsed, setPreviewParsed] = useState(null);
   
-  // Financial Setting Panel State
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
-  const [incomeInput, setIncomeInput] = useState(String(userProfile?.monthlyIncome || 6500000));
-  const [fixedInput, setFixedInput] = useState(String(userProfile?.fixedCosts || 1850000));
-  const [targetInput, setTargetInput] = useState(String(userProfile?.monthlyInvestmentTarget || 3000000));
+  // Financial Setting Modal State
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [incomeInput, setIncomeInput] = useState(String(userProfile?.monthlyIncome ?? 0));
+  const [fixedInput, setFixedInput] = useState(String(userProfile?.fixedCosts ?? 0));
+  const [targetInput, setTargetInput] = useState(String(userProfile?.monthlyInvestmentTarget ?? 0));
 
   // Financial Variables
-  const monthlyIncome = Number(userProfile?.monthlyIncome) || 6500000;
-  const fixedCosts = Number(userProfile?.fixedCosts) || 1850000;
-  const investmentTarget = Number(userProfile?.monthlyInvestmentTarget) || 3000000;
+  const monthlyIncome = Number(userProfile?.monthlyIncome) || 0;
+  const fixedCosts = Number(userProfile?.fixedCosts) || 0;
+  const investmentTarget = Number(userProfile?.monthlyInvestmentTarget) || 0;
 
   const openSettings = () => {
     setIncomeInput(String(monthlyIncome));
     setFixedInput(String(fixedCosts));
     setTargetInput(String(investmentTarget));
-    setShowSettingsPanel(true);
+    setIsSettingsModalOpen(true);
   };
 
   const saveSettings = () => {
-    const inc = parseInt(incomeInput.replace(/,/g, ''), 10) || monthlyIncome;
-    const fix = parseInt(fixedInput.replace(/,/g, ''), 10) || fixedCosts;
-    const tgt = parseInt(targetInput.replace(/,/g, ''), 10) || investmentTarget;
+    const inc = Math.max(0, parseInt(String(incomeInput).replace(/,/g, ''), 10) || 0);
+    const fix = Math.max(0, parseInt(String(fixedInput).replace(/,/g, ''), 10) || 0);
+    const tgt = Math.max(0, parseInt(String(targetInput).replace(/,/g, ''), 10) || 0);
 
     if (onUpdateUserProfile) {
       onUpdateUserProfile({
@@ -67,14 +70,29 @@ export function ExpenseTracker({
         monthlyInvestmentTarget: tgt
       });
     }
-    setShowSettingsPanel(false);
+    setIsSettingsModalOpen(false);
   };
 
   // Quick adjust helpers
   const adjustValue = (setter, currentStr, delta) => {
-    const curr = parseInt(currentStr.replace(/,/g, ''), 10) || 0;
+    const curr = parseInt(String(currentStr).replace(/,/g, ''), 10) || 0;
     const next = Math.max(0, curr + delta);
     setter(String(next));
+  };
+
+  const formatKoreanUnits = (numStr) => {
+    const n = parseInt(String(numStr).replace(/,/g, ''), 10) || 0;
+    if (n === 0) return '0원';
+    const eok = Math.floor(n / 100000000);
+    const man = Math.floor((n % 100000000) / 10000);
+    const remainder = n % 10000;
+    
+    let res = '';
+    if (eok > 0) res += `${eok}억 `;
+    if (man > 0) res += `${man}만 `;
+    if (remainder > 0 || res === '') res += `${remainder.toLocaleString()}원`;
+    else res += '원';
+    return res.trim();
   };
 
   // Calculate Cumulative Variable Expenses
@@ -82,10 +100,11 @@ export function ExpenseTracker({
   const variableExpenses = validExpenses.filter(e => e && !e.isFixed);
   const totalVariableExpense = variableExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
 
-  // The Essential Core Formula:
   // Available Investment Surplus = Monthly Income - Fixed Costs - Cumulative Variable Expenses
   const availableInvestmentSurplus = monthlyIncome - fixedCosts - totalVariableExpense;
-  const surplusTargetPercent = Math.min(100, Math.max(0, Math.round((availableInvestmentSurplus / investmentTarget) * 100)));
+  const surplusTargetPercent = investmentTarget > 0 
+    ? Math.min(100, Math.max(0, Math.round((availableInvestmentSurplus / investmentTarget) * 100)))
+    : 0;
 
   // Category Aggregate Calculation
   const categoryTotals = {};
@@ -165,6 +184,12 @@ export function ExpenseTracker({
     setPreviewParsed(null);
   };
 
+  // Preview numbers inside modal
+  const previewInc = parseInt(String(incomeInput).replace(/,/g, ''), 10) || 0;
+  const previewFix = parseInt(String(fixedInput).replace(/,/g, ''), 10) || 0;
+  const previewTgt = parseInt(String(targetInput).replace(/,/g, ''), 10) || 0;
+  const previewSurplus = previewInc - previewFix - totalVariableExpense;
+
   return (
     <div className="expense-tracker-container">
       {/* 🎯 CORE INVESTMENT SURPLUS HUD BANNER */}
@@ -180,12 +205,12 @@ export function ExpenseTracker({
                 <span className="badge badge-emerald mono">목표 대비 {surplusTargetPercent}%</span>
               </div>
               <button 
-                className="btn btn-secondary btn-sm"
+                className="btn btn-secondary btn-sm glowing-btn"
                 onClick={openSettings}
                 title="소득, 고정비, 투자 목표액 직접 수정"
               >
                 <Settings size={14} className="text-cyan" />
-                <span>⚙️ 재정 기준금액 수정</span>
+                <span>⚙️ 재정 기준금액 설정</span>
               </button>
             </div>
 
@@ -202,103 +227,16 @@ export function ExpenseTracker({
           </div>
         </div>
 
-        {/* ⚙️ Intuitive Financial Settings Panel (Expanded when clicked) */}
-        {showSettingsPanel && (
-          <div className="financial-settings-panel glass-card mt-3 p-4 border border-cyan-500/30">
-            <div className="panel-header flex items-center justify-between pb-2 border-b border-white/10 mb-3">
-              <div className="flex items-center gap-2">
-                <Sliders size={16} className="text-cyan" />
-                <h4 className="text-sm font-bold text-highlight">⚙️ 재정 기준 금액 설정</h4>
-              </div>
-              <button className="btn-icon" onClick={() => setShowSettingsPanel(false)}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="settings-inputs-grid grid grid-cols-1 md:grid-cols-3 gap-3">
-              {/* Setting 1: Monthly Income */}
-              <div className="setting-input-card bg-black/30 p-3 rounded-lg border border-white/5">
-                <label className="text-xs text-cyan font-bold block mb-1">
-                  1. 당월 총소득 (원)
-                </label>
-                <input
-                  type="number"
-                  className="input-text w-full font-mono text-sm"
-                  value={incomeInput}
-                  onChange={e => setIncomeInput(e.target.value)}
-                />
-                <div className="text-xs text-muted mt-1 flex justify-between">
-                  <span>={(parseInt(incomeInput || 0, 10) / 10000).toLocaleString()}만원</span>
-                  <div className="flex gap-1">
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setIncomeInput, incomeInput, 100000)}>+10만</button>
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setIncomeInput, incomeInput, 500000)}>+50만</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Setting 2: Fixed Costs */}
-              <div className="setting-input-card bg-black/30 p-3 rounded-lg border border-white/5">
-                <label className="text-xs text-rose font-bold block mb-1">
-                  2. 고정비 (원)
-                </label>
-                <input
-                  type="number"
-                  className="input-text w-full font-mono text-sm"
-                  value={fixedInput}
-                  onChange={e => setFixedInput(e.target.value)}
-                />
-                <div className="text-xs text-muted mt-1 flex justify-between">
-                  <span>={(parseInt(fixedInput || 0, 10) / 10000).toLocaleString()}만원</span>
-                  <div className="flex gap-1">
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setFixedInput, fixedInput, 50000)}>+5만</button>
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setFixedInput, fixedInput, 100000)}>+10만</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Setting 3: Target Investment */}
-              <div className="setting-input-card bg-black/30 p-3 rounded-lg border border-white/5">
-                <label className="text-xs text-emerald font-bold block mb-1">
-                  3. 월간 목표 투자액 (원)
-                </label>
-                <input
-                  type="number"
-                  className="input-text w-full font-mono text-sm"
-                  value={targetInput}
-                  onChange={e => setTargetInput(e.target.value)}
-                />
-                <div className="text-xs text-muted mt-1 flex justify-between">
-                  <span>={(parseInt(targetInput || 0, 10) / 10000).toLocaleString()}만원</span>
-                  <div className="flex gap-1">
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setTargetInput, targetInput, 100000)}>+10만</button>
-                    <button className="badge badge-subtle cursor-pointer" onClick={() => adjustValue(setTargetInput, targetInput, 500000)}>+50만</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-white/10">
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowSettingsPanel(false)}>
-                취소
-              </button>
-              <button className="btn btn-primary btn-sm px-4" onClick={saveSettings}>
-                <Check size={14} />
-                <span>설정 저장하기</span>
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Financial Calculation Steps Grid (3 Inputs + 1 Full Result Banner) */}
         <div className="surplus-steps-grid mt-3">
           {/* Step 1: Income */}
           <div 
-            className="surplus-step-tile surplus-step-tile-editable cursor-pointer"
+            className="surplus-step-tile surplus-step-tile-interactive cursor-pointer"
             onClick={openSettings}
-            title="클릭하여 소득 및 기준 금액 수정"
+            title="클릭하여 소득 기준 금액 수정"
           >
             <div className="step-tile-top">
-              <span className="step-tag text-cyan">1. 당월 총소득</span>
+              <span className="step-tag text-cyan font-bold">1. 당월 총소득</span>
               <span className="step-sign text-emerald">+</span>
             </div>
             <div className="step-amount mono text-highlight">
@@ -306,18 +244,18 @@ export function ExpenseTracker({
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="step-desc text-muted text-xs">급여 및 사업 소득</span>
-              <span className="badge badge-cyan text-xs">✏️ 수정</span>
+              <span className="edit-pill-badge">✏️ 설정</span>
             </div>
           </div>
 
           {/* Step 2: Fixed Costs */}
           <div 
-            className="surplus-step-tile surplus-step-tile-editable cursor-pointer"
+            className="surplus-step-tile surplus-step-tile-interactive cursor-pointer"
             onClick={openSettings}
-            title="클릭하여 고정비 및 기준 금액 수정"
+            title="클릭하여 고정비 기준 금액 수정"
           >
             <div className="step-tile-top">
-              <span className="step-tag text-rose">2. 고정비</span>
+              <span className="step-tag text-rose font-bold">2. 고정비</span>
               <span className="step-sign text-rose">-</span>
             </div>
             <div className="step-amount mono text-rose">
@@ -325,20 +263,22 @@ export function ExpenseTracker({
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className="step-desc text-muted text-xs">월세, 보험, 통신, 대출</span>
-              <span className="badge badge-rose text-xs">✏️ 수정</span>
+              <span className="edit-pill-badge badge-rose">✏️ 설정</span>
             </div>
           </div>
 
           {/* Step 3: Cumulative Variable Expenses */}
           <div className="surplus-step-tile">
             <div className="step-tile-top">
-              <span className="step-tag text-amber">3. 누적 변동지출</span>
+              <span className="step-tag text-amber font-bold">3. 누적 변동지출</span>
               <span className="step-sign text-amber">-</span>
             </div>
             <div className="step-amount mono text-amber">
               {totalVariableExpense.toLocaleString()}원
             </div>
-            <span className="step-desc text-muted text-xs">식비, 쇼핑, 카페, 여가 ({expenses.length}건)</span>
+            <span className="step-desc text-muted text-xs">
+              {expenses.length > 0 ? `식비, 쇼핑, 카페 등 (${expenses.length}건)` : '등록된 변동지출 없음'}
+            </span>
           </div>
         </div>
 
@@ -375,17 +315,140 @@ export function ExpenseTracker({
           </span>
           <div className="alloc-chips mt-2">
             <span className="glass-pill text-cyan">
-              🇺🇸 핵심 코어 ETF (QQQ/S&P500 50%): <strong>{Math.round(availableInvestmentSurplus * 0.5).toLocaleString()}원</strong>
+              🇺🇸 핵심 코어 ETF (50%): <strong>{Math.max(0, Math.round(availableInvestmentSurplus * 0.5)).toLocaleString()}원</strong>
             </span>
             <span className="glass-pill text-emerald">
-              🚀 AI 주도 성장주 (NVDA/TSLA 35%): <strong>{Math.round(availableInvestmentSurplus * 0.35).toLocaleString()}원</strong>
+              🚀 AI 주도 성장주 (35%): <strong>{Math.max(0, Math.round(availableInvestmentSurplus * 0.35)).toLocaleString()}원</strong>
             </span>
             <span className="glass-pill text-amber">
-              🛡️ 기회 유동성 (단기채/CMA 15%): <strong>{Math.round(availableInvestmentSurplus * 0.15).toLocaleString()}원</strong>
+              🛡️ 기회 유동성 (15%): <strong>{Math.max(0, Math.round(availableInvestmentSurplus * 0.15)).toLocaleString()}원</strong>
             </span>
           </div>
         </div>
       </div>
+
+      {/* 🌟 ULTRA-SLEEK GLASS MODAL FOR FINANCIAL BASELINE SETTINGS */}
+      {isSettingsModalOpen && (
+        <div className="modal-backdrop-blur" onClick={() => setIsSettingsModalOpen(false)}>
+          <div className="financial-modal-card glass-card" onClick={e => e.stopPropagation()}>
+            <div className="modal-top-bar flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="modal-icon-badge bg-cyan-500/20 text-cyan p-2 rounded-lg">
+                  <Sliders size={18} />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-highlight">⚙️ 재정 기준 금액 설정</h4>
+                  <p className="text-muted text-xs">수정 즉시 실시간 잉여금 및 투자 배분이 자동 계산됩니다.</p>
+                </div>
+              </div>
+              <button className="btn-icon" onClick={() => setIsSettingsModalOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="modal-body-content mt-4 space-y-4">
+              {/* Field 1: Monthly Income */}
+              <div className="financial-input-group glass-card p-3 border border-cyan-500/20">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Coins size={15} className="text-cyan" />
+                    <span className="text-xs font-bold text-cyan">1. 당월 총소득 (월급 / 사업 소득)</span>
+                  </div>
+                  <span className="mono text-xs font-bold text-highlight">{formatKoreanUnits(incomeInput)}</span>
+                </div>
+                <div className="input-currency-wrapper">
+                  <input
+                    type="number"
+                    className="input-text financial-number-input"
+                    value={incomeInput}
+                    onChange={e => setIncomeInput(e.target.value)}
+                    placeholder="0"
+                  />
+                  <span className="currency-unit">원</span>
+                </div>
+                <div className="quick-step-pills mt-2 flex gap-1.5 flex-wrap">
+                  <button className="step-pill" onClick={() => adjustValue(setIncomeInput, incomeInput, 100000)}>+10만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setIncomeInput, incomeInput, 500000)}>+50만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setIncomeInput, incomeInput, 1000000)}>+100만</button>
+                  <button className="step-pill text-rose" onClick={() => setIncomeInput('0')}>초기화</button>
+                </div>
+              </div>
+
+              {/* Field 2: Fixed Costs */}
+              <div className="financial-input-group glass-card p-3 border border-rose-500/20">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Building size={15} className="text-rose" />
+                    <span className="text-xs font-bold text-rose">2. 월 고정비 (월세 / 대출 / 보험 / 통신)</span>
+                  </div>
+                  <span className="mono text-xs font-bold text-rose">{formatKoreanUnits(fixedInput)}</span>
+                </div>
+                <div className="input-currency-wrapper">
+                  <input
+                    type="number"
+                    className="input-text financial-number-input border-rose-500/40"
+                    value={fixedInput}
+                    onChange={e => setFixedInput(e.target.value)}
+                    placeholder="0"
+                  />
+                  <span className="currency-unit">원</span>
+                </div>
+                <div className="quick-step-pills mt-2 flex gap-1.5 flex-wrap">
+                  <button className="step-pill" onClick={() => adjustValue(setFixedInput, fixedInput, 50000)}>+5만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setFixedInput, fixedInput, 100000)}>+10만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setFixedInput, fixedInput, 500000)}>+50만</button>
+                  <button className="step-pill text-rose" onClick={() => setFixedInput('0')}>초기화</button>
+                </div>
+              </div>
+
+              {/* Field 3: Monthly Investment Target */}
+              <div className="financial-input-group glass-card p-3 border border-emerald-500/20">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Target size={15} className="text-emerald" />
+                    <span className="text-xs font-bold text-emerald">3. 월간 목표 투자액</span>
+                  </div>
+                  <span className="mono text-xs font-bold text-emerald">{formatKoreanUnits(targetInput)}</span>
+                </div>
+                <div className="input-currency-wrapper">
+                  <input
+                    type="number"
+                    className="input-text financial-number-input border-emerald-500/40"
+                    value={targetInput}
+                    onChange={e => setTargetInput(e.target.value)}
+                    placeholder="0"
+                  />
+                  <span className="currency-unit">원</span>
+                </div>
+                <div className="quick-step-pills mt-2 flex gap-1.5 flex-wrap">
+                  <button className="step-pill" onClick={() => adjustValue(setTargetInput, targetInput, 100000)}>+10만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setTargetInput, targetInput, 500000)}>+50만</button>
+                  <button className="step-pill" onClick={() => adjustValue(setTargetInput, targetInput, 1000000)}>+100만</button>
+                  <button className="step-pill text-rose" onClick={() => setTargetInput('0')}>초기화</button>
+                </div>
+              </div>
+
+              {/* Live Preview Strip */}
+              <div className="preview-calc-strip p-3 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between text-xs">
+                <span className="text-muted">예상 가용 잉여금:</span>
+                <span className="mono font-bold text-cyan text-sm">
+                  {previewSurplus.toLocaleString()}원
+                </span>
+              </div>
+            </div>
+
+            <div className="modal-footer-actions flex justify-end gap-2.5 mt-5 pt-3 border-t border-white/10">
+              <button className="btn btn-secondary" onClick={() => setIsSettingsModalOpen(false)}>
+                취소
+              </button>
+              <button className="btn btn-primary px-5 font-bold" onClick={saveSettings}>
+                <Check size={16} />
+                <span>설정 저장하기</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Card SMS & Expense Input Bar */}
       <div className="expense-input-card glass-card mt-4">
@@ -409,32 +472,6 @@ export function ExpenseTracker({
             <button type="submit" className="btn btn-primary">
               <Plus size={16} />
               <span>지출 기록</span>
-            </button>
-          </div>
-
-          {/* Quick Preset Buttons */}
-          <div className="quick-expense-presets mt-2">
-            <span className="text-muted text-xs">빠른 예시:</span>
-            <button
-              type="button"
-              className="badge badge-cyan cursor-pointer"
-              onClick={() => handleInputChange('[KB국민] 08/27 12:40 구내식당 9,000원 결제')}
-            >
-              🍱 점심 식비
-            </button>
-            <button
-              type="button"
-              className="badge badge-purple cursor-pointer"
-              onClick={() => handleInputChange('교보문고 AI 서적 35000원 구매')}
-            >
-              📚 도서 구매
-            </button>
-            <button
-              type="button"
-              className="badge badge-amber cursor-pointer"
-              onClick={() => handleInputChange('스타벅스 아메리카노 4500원')}
-            >
-              ☕ 카페
             </button>
           </div>
         </form>
@@ -470,9 +507,10 @@ export function ExpenseTracker({
             {chartLabels.length > 0 ? (
               <Doughnut data={chartData} options={chartOptions} />
             ) : (
-              <div className="empty-state-card">
-                <Wallet size={32} className="text-muted mb-2" />
-                <p className="text-muted text-xs">지출 내역이 없습니다.</p>
+              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
+                <Wallet size={36} className="text-muted/50 mb-2" />
+                <p className="text-muted text-xs font-medium">등록된 지출 내역이 없습니다.</p>
+                <p className="text-muted/60 text-2xs mt-1">위 입력창에 카드 결제 문자를 붙여넣어보세요.</p>
               </div>
             )}
           </div>
@@ -492,8 +530,9 @@ export function ExpenseTracker({
 
           <div className="expense-items-table">
             {expenses.length === 0 ? (
-              <div className="empty-state-card">
-                <p className="text-muted text-xs">등록된 지출 내역이 없습니다.</p>
+              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
+                <p className="text-muted text-xs font-medium">등록된 지출 내역이 없습니다.</p>
+                <p className="text-muted/60 text-2xs mt-1">새로운 결제 내역을 기록하면 이곳에 실시간 누적됩니다.</p>
               </div>
             ) : (
               expenses.map(expense => (

@@ -5448,8 +5448,170 @@
   transition: opacity 0.2s ease;
 }
 
-.timeline-node:hover .node-actions {
-  opacity: 1;
+/* ==========================================================
+   Modal Backdrop Blur & Glass Modal Cards
+   ========================================================== */
+.modal-backdrop-blur {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: fadeInBackdrop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.financial-modal-card,
+.ai-schedule-modal-card {
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(145deg, rgba(17, 24, 39, 0.96) 0%, rgba(8, 11, 18, 0.98) 100%);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 240, 255, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  animation: modalScaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ai-schedule-modal-card {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(139, 92, 246, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.input-currency-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.financial-number-input {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 10px 36px 10px 14px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: var(--radius-md);
+  color: #fff;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.financial-number-input:focus {
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+  outline: none;
+}
+
+.currency-unit {
+  position: absolute;
+  right: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.step-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.step-pill:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--cyan-primary);
+  color: var(--cyan-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.2);
+}
+
+.step-pill:active {
+  transform: translateY(0);
+}
+
+.surplus-step-tile-interactive {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.surplus-step-tile-interactive:hover {
+  border-color: var(--cyan-primary);
+  background: rgba(0, 240, 255, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.12);
+}
+
+.edit-pill-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: var(--cyan-primary);
+  transition: all 0.2s ease;
+}
+
+.edit-pill-badge.badge-rose {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: var(--rose-primary);
+}
+
+.glowing-btn {
+  position: relative;
+  transition: all 0.22s ease;
+}
+
+.glowing-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+}
+
+.active-preset-card {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.18);
+  transform: translateY(-1px);
+}
+
+.select-check-badge {
+  background: var(--purple-primary);
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cursor-pointer {
@@ -5460,36 +5622,6 @@
   font-size: 10px;
 }
 
-.badge-subtle {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  transition: all 0.2s ease;
-}
-
-.badge-subtle:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: var(--text-highlight);
-}
-
-.financial-settings-panel {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.06) 0%, rgba(8, 11, 17, 0.98) 100%);
-  border-radius: var(--radius-md);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.25s ease-out;
-}
-
-.preset-chip-btn {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.preset-chip-btn:hover {
-  transform: translateY(-1px);
-}
 
 
 
