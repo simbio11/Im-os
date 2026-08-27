@@ -4,6 +4,7 @@ import {
 } from './components/Header';
 import { CommandPalette } from './components/CommandPalette';
 import { LevelUpModal } from './components/LevelUpModal';
+import { LevelSystemModal } from './components/LevelSystemModal';
 import { ObsidianModal } from './components/ObsidianModal';
 import { DailyRoutines } from './components/DailyRoutines';
 import { DietTracker } from './components/DietTracker';
@@ -19,6 +20,7 @@ import { DeepworkSoundscape } from './components/DeepworkSoundscape';
 import { CalendarScheduler } from './components/CalendarScheduler';
 import { DashboardCalendarWidget } from './components/DashboardCalendarWidget';
 import { DashboardMarketWidget } from './components/DashboardMarketWidget';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 import { 
   INITIAL_USER_PROFILE, 
@@ -136,6 +138,7 @@ export function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [obsidianModalOpen, setObsidianModalOpen] = useState(false);
   const [levelUpModalOpen, setLevelUpModalOpen] = useState(false);
+  const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
   const [ragInitialQuery, setRagInitialQuery] = useState('');
 
   // Global YouTube Music State
@@ -162,8 +165,27 @@ export function App() {
     setIsMusicPlaying(true);
   };
 
+  const handleShuffleMusic = () => {
+    const currentIndex = YOUTUBE_PRESETS.findIndex(p => p.id === currentTrack?.id);
+    const nextIndex = (currentIndex + 1) % YOUTUBE_PRESETS.length;
+    const nextTrack = YOUTUBE_PRESETS[nextIndex];
+    setCurrentTrack(nextTrack);
+    setIsMusicPlaying(true);
+  };
+
+  const handleResetXP = () => {
+    const freshProfile = {
+      ...INITIAL_USER_PROFILE,
+      xp: 0,
+      level: 1,
+      tier: "입만 산 애송이"
+    };
+    setUserProfile(freshProfile);
+    localStorage.setItem('lm_user_profile', JSON.stringify(freshProfile));
+  };
+
   // 2. Compute Level and Tier Info dynamically from total XP
-  const levelInfo = calculateLevelFromXP(userProfile?.xp ?? INITIAL_USER_PROFILE.xp);
+  const levelInfo = calculateLevelFromXP(userProfile?.xp ?? 0);
 
   // Sync to LocalStorage
   useEffect(() => {
@@ -334,8 +356,10 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         onOpenObsidianModal={() => setObsidianModalOpen(true)}
+        onOpenLevelModal={() => setLevelSystemModalOpen(true)}
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={handleToggleMusic}
+        onShuffleMusic={handleShuffleMusic}
         currentTrack={currentTrack}
       />
 
@@ -351,6 +375,7 @@ export function App() {
                 onToggleEvent={handleToggleCalendarEvent}
                 onAddEvent={handleAddCalendarEvent}
                 onGoToCalendar={() => setActiveTab('calendar')}
+                onOpenObsidianModal={() => setObsidianModalOpen(true)}
               />
               <DashboardMarketWidget
                 onGoToMarket={() => setActiveTab('market')}
@@ -620,6 +645,21 @@ export function App() {
         level={levelInfo.level}
         tier={levelInfo.tier}
         earnedXP={userProfile.xp}
+      />
+
+      <LevelSystemModal
+        isOpen={levelSystemModalOpen}
+        onClose={() => setLevelSystemModalOpen(false)}
+        userProfile={userProfile}
+        levelInfo={levelInfo}
+        onAwardXP={awardXP}
+        onResetXP={handleResetXP}
+      />
+
+      {/* Mobile Bottom Navigation Bar (Shown on Mobile screens <= 768px) */}
+      <MobileBottomNav 
+        activeTab={activeTab} 
+        onSelectTab={setActiveTab} 
       />
     </div>
   );

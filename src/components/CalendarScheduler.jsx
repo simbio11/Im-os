@@ -328,14 +328,25 @@ export function CalendarScheduler({
             </button>
           </div>
 
-          {/* Add Event Button */}
-          <button 
-            className="btn btn-primary btn-sm"
-            onClick={() => handleOpenAddModal(selectedDate)}
-          >
-            <Plus size={15} />
-            <span>일정 추가</span>
-          </button>
+          {/* Obsidian Sync & Add Event Buttons */}
+          <div className="flex items-center gap-2">
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={onOpenObsidianModal}
+              title="옵시디언 마크다운으로 일정 즉시 동기화"
+            >
+              <FileText size={14} className="text-purple" />
+              <span>옵시디언 싱크</span>
+            </button>
+
+            <button 
+              className="btn btn-primary btn-sm"
+              onClick={() => handleOpenAddModal(selectedDate)}
+            >
+              <Plus size={15} />
+              <span>일정 추가</span>
+            </button>
+          </div>
         </div>
       </div>
 

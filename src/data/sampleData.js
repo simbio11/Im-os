@@ -2,11 +2,11 @@
 
 export const INITIAL_USER_PROFILE = {
   name: "Neo Commander",
-  tier: "Cyber Alpha",
-  level: 14,
-  xp: 3450,
-  xpToNextLevel: 4000,
-  streak: 12, // 12-day continuous routine streak
+  tier: "입만 산 애송이",
+  level: 1,
+  xp: 0,
+  xpToNextLevel: 142,
+  streak: 1,
   monthlyIncome: 6500000, // 650만원
   fixedCosts: 1850000, // 185만원 (월세, 대출이자, 고정보험, 통신비 등)
   monthlyInvestmentTarget: 3000000 // 목표 300만원

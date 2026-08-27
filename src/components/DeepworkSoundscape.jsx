@@ -4,6 +4,7 @@ import {
   Play, 
   Pause, 
   RotateCcw, 
+  RotateCw,
   Volume2, 
   VolumeX, 
   Zap, 
@@ -16,12 +17,22 @@ import {
   Music,
   ExternalLink,
   Plus,
-  Compass
+  Compass,
+  Trash2
 } from 'lucide-react';
 import { 
   YOUTUBE_PRESETS, 
   extractYouTubeVideoId 
 } from '../data/soundPresets';
+import { 
+  startBinauralBeats, 
+  stopBinauralBeats, 
+  setBinauralVolume,
+  startAmbientNoise, 
+  stopAmbientNoise, 
+  setNoiseVolume,
+  playLevelUpSound 
+} from '../utils/audioSynth';
 
 function YoutubeIcon({ size = 18, className = "" }) {
   return (
@@ -36,15 +47,6 @@ function YoutubeIcon({ size = 18, className = "" }) {
     </svg>
   );
 }
-import { 
-  startBinauralBeats, 
-  stopBinauralBeats, 
-  setBinauralVolume,
-  startAmbientNoise, 
-  stopAmbientNoise, 
-  setNoiseVolume,
-  playLevelUpSound 
-} from '../utils/audioSynth';
 
 export function DeepworkSoundscape({ 
   onCompleteDeepwork, 
@@ -58,14 +60,40 @@ export function DeepworkSoundscape({
   const [timeLeft, setTimeLeft] = useState(90 * 60);
   const [isActive, setIsActive] = useState(false);
 
+  // Category Filter State
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Custom YouTube Saved Tracks
+  const [customSavedTracks, setCustomSavedTracks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('lm_custom_music_tracks');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   // Custom YouTube URL Input State
   const [customUrlInput, setCustomUrlInput] = useState('');
+  const [customTitleInput, setCustomTitleInput] = useState('');
   const [customUrlError, setCustomUrlError] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
 
   // Ambient Layer States (optional sound blend)
   const [ambientRainActive, setAmbientRainActive] = useState(false);
   const [ambientRainVol, setAmbientRainVol] = useState(0.15);
+
+  useEffect(() => {
+    localStorage.setItem('lm_custom_music_tracks', JSON.stringify(customSavedTracks));
+  }, [customSavedTracks]);
+
+  // Combine Presets + Custom
+  const allTracks = [...customSavedTracks, ...YOUTUBE_PRESETS];
+
+  // Filtered tracks
+  const displayedTracks = selectedCategory === 'all' 
+    ? allTracks 
+    : allTracks.filter(t => t.category === selectedCategory);
 
   // Timer Tick
   useEffect(() => {
@@ -108,6 +136,14 @@ export function DeepworkSoundscape({
     setTimeLeft(selectedDuration * 60);
   };
 
+  // Shuffle next theme
+  const handleShuffleNextTheme = () => {
+    const currentIndex = allTracks.findIndex(p => p.videoId === currentTrack?.videoId);
+    const nextIndex = (currentIndex + 1) % allTracks.length;
+    const nextTrack = allTracks[nextIndex];
+    onSelectTrack(nextTrack);
+  };
+
   // Handle Custom YouTube Link Submission
   const handleApplyCustomUrl = (e) => {
     e.preventDefault();
@@ -122,19 +158,26 @@ export function DeepworkSoundscape({
     setCustomUrlError('');
     const newTrack = {
       id: `custom-${Date.now()}`,
-      title: "사용자 등록 유튜브 스트림",
-      channel: "Custom YouTube Audio",
+      title: customTitleInput.trim() || "사용자 등록 유튜브 스트림",
+      channel: "내 커스텀 오디오",
       videoId: videoId,
       category: "custom",
-      badge: "사용자 지정 🎵",
-      badgeColor: "cyan",
+      badge: "내 링크 🔗",
+      badgeColor: "purple",
       desc: customUrlInput.trim(),
       thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     };
 
+    setCustomSavedTracks(prev => [newTrack, ...prev]);
     onSelectTrack(newTrack);
     setCustomUrlInput('');
+    setCustomTitleInput('');
     setShowCustomInput(false);
+  };
+
+  const handleDeleteCustomTrack = (id, e) => {
+    e.stopPropagation();
+    setCustomSavedTracks(prev => prev.filter(t => t.id !== id));
   };
 
   // Optional Ambient Rain Toggle
@@ -170,15 +213,15 @@ export function DeepworkSoundscape({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h4>딥워크 포모도로 & 유튜브 스트림 사운드스케이프</h4>
-              <span className="badge badge-cyan">YouTube Audio Hub</span>
-              {isMusicPlaying && <span className="status-dot-pulse emerald ml-1" title="음악 재생 중"></span>}
+              <span className="badge badge-purple">YouTube Audio Hub</span>
+              {isMusicPlaying && <span className="status-dot cyan ml-1" title="음악 재생 중"></span>}
             </div>
             <p className="text-muted text-xs mt-1">
-              원하는 유튜브 음악(Lofi, 신스웨이브, 피아노 BGM) 및 맞춤 URL을 백그라운드로 연속 재생하며 몰입을 유지합니다.
+              원하는 유튜브 음악(Lofi, 신스웨이브, 피아노, 지브리, 432Hz) 및 맞춤 URL을 백그라운드로 연속 재생하며 몰입을 유지합니다.
             </p>
           </div>
         </div>
-        <span className="badge badge-cyan">+50 XP Deepwork Reward</span>
+        <span className="badge badge-purple">+50 XP Deepwork Reward</span>
       </div>
 
       <div className="soundscape-grid mt-3">
@@ -236,7 +279,7 @@ export function DeepworkSoundscape({
           <div className="timer-current-track-banner glass-card mt-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className={`track-disc-icon ${isMusicPlaying ? 'spinning' : ''}`}>
-                <Music size={16} className="text-cyan" />
+                <Music size={16} className="text-purple" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-highlight truncate">
@@ -247,7 +290,7 @@ export function DeepworkSoundscape({
             </div>
 
             <button 
-              className={`btn btn-sm ${isMusicPlaying ? 'btn-emerald' : 'btn-secondary'}`}
+              className={`btn btn-sm ${isMusicPlaying ? 'btn-primary' : 'btn-secondary'}`}
               onClick={onToggleMusic}
             >
               {isMusicPlaying ? <Pause size={14} /> : <Play size={14} />}
@@ -261,40 +304,84 @@ export function DeepworkSoundscape({
           <div className="panel-header">
             <div className="panel-title-with-icon">
               <YoutubeIcon size={20} className="text-rose" />
-              <h5 className="text-highlight">유튜브 배경음악 & 사운드 프리셋</h5>
+              <div>
+                <h5 className="text-highlight">유튜브 배경음악 & 테마 라이브러리</h5>
+                <span className="text-muted text-xs">총 {allTracks.length}개 큐레이션 트랙 지원</span>
+              </div>
             </div>
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => setShowCustomInput(!showCustomInput)}
-              title="내 유튜브 링크 직접 입력"
-            >
-              <Link size={13} />
-              <span>{showCustomInput ? '닫기' : '내 유튜브 링크 추가'}</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={handleShuffleNextTheme}
+                title="다음 테마 음악으로 새로고침 및 즉시 전환"
+              >
+                <RotateCw size={13} className="text-purple" />
+                <span>테마 새로고침</span>
+              </button>
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowCustomInput(!showCustomInput)}
+                title="내 유튜브 링크 직접 입력"
+              >
+                <Link size={13} />
+                <span>{showCustomInput ? '닫기' : '내 유튜브 링크 추가'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="music-category-pills">
+            {[
+              { id: 'all', label: '전체' },
+              { id: 'lofi', label: '☕ 로파이' },
+              { id: 'cyberpunk', label: '⚡ 신스웨이브' },
+              { id: 'piano', label: '🎹 피아노·지브리' },
+              { id: 'ambient', label: '🌌 앰비언트·자연' },
+              { id: 'jazz', label: '🎷 재즈' },
+              { id: 'binaural', label: '🧠 뇌파·432Hz' },
+              { id: 'custom', label: `🔗 내 링크 (${customSavedTracks.length})` }
+            ].map(cat => (
+              <button
+                key={cat.id}
+                className={`music-cat-pill ${selectedCategory === cat.id ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
 
           {/* Custom YouTube URL Form */}
           {showCustomInput && (
             <form onSubmit={handleApplyCustomUrl} className="custom-youtube-form glass-card mb-3">
-              <label className="text-xs font-semibold text-cyan block mb-1">
-                🔗 원하는 유튜브 영상 링크(URL) 붙여넣기:
+              <label className="text-xs font-semibold text-purple block mb-1">
+                🔗 원하는 유튜브 영상 링크(URL) 또는 제목 등록:
               </label>
-              <div className="input-with-button">
+              <div className="flex flex-col gap-2">
                 <input
                   type="text"
-                  className="input-text flex-1"
-                  placeholder="예: https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
-                  value={customUrlInput}
-                  onChange={e => {
-                    setCustomUrlInput(e.target.value);
-                    setCustomUrlError('');
-                  }}
-                  autoFocus
+                  className="input-text"
+                  placeholder="음악 제목 (선택 사항, 예: 내가 좋아하는 재즈 플리)"
+                  value={customTitleInput}
+                  onChange={e => setCustomTitleInput(e.target.value)}
                 />
-                <button type="submit" className="btn btn-primary btn-sm">
-                  <Check size={14} />
-                  <span>적용 & 재생</span>
-                </button>
+                <div className="input-with-button">
+                  <input
+                    type="text"
+                    className="input-text flex-1"
+                    placeholder="예: https://www.youtube.com/watch?v=... 또는 https://youtu.be/..."
+                    value={customUrlInput}
+                    onChange={e => {
+                      setCustomUrlInput(e.target.value);
+                      setCustomUrlError('');
+                    }}
+                    autoFocus
+                  />
+                  <button type="submit" className="btn btn-primary btn-sm">
+                    <Check size={14} />
+                    <span>저장 & 재생</span>
+                  </button>
+                </div>
               </div>
               {customUrlError && (
                 <span className="text-rose text-xs mt-1 block">{customUrlError}</span>
@@ -304,7 +391,7 @@ export function DeepworkSoundscape({
 
           {/* Preset Tracks Grid */}
           <div className="youtube-presets-grid">
-            {YOUTUBE_PRESETS.map((preset) => {
+            {displayedTracks.map((preset) => {
               const isSelected = currentTrack?.videoId === preset.videoId;
               return (
                 <div 
@@ -313,14 +400,25 @@ export function DeepworkSoundscape({
                   onClick={() => onSelectTrack(preset)}
                 >
                   <div className="preset-card-top">
-                    <span className={`badge badge-${preset.badgeColor} text-xs font-bold`}>
+                    <span className={`badge badge-${preset.badgeColor || 'purple'} text-xs font-bold`}>
                       {preset.badge}
                     </span>
-                    {isSelected && (
-                      <span className="badge badge-emerald text-xs">
-                        {isMusicPlaying ? '▶ 재생 중' : '선택됨'}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {isSelected && (
+                        <span className="badge badge-emerald text-xs">
+                          {isMusicPlaying ? '▶ 재생 중' : '선택됨'}
+                        </span>
+                      )}
+                      {preset.category === 'custom' && (
+                        <button 
+                          className="btn-icon-micro text-faint hover-rose ml-1"
+                          onClick={(e) => handleDeleteCustomTrack(preset.id, e)}
+                          title="내 링크 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <strong className="preset-title font-bold text-sm text-highlight mt-1 line-clamp-1">
@@ -334,7 +432,7 @@ export function DeepworkSoundscape({
                     <span className="preset-channel text-xs text-muted truncate">
                       {preset.channel}
                     </span>
-                    <span className="preset-action text-xs text-cyan font-bold">
+                    <span className="preset-action text-xs text-purple font-bold">
                       {isSelected && isMusicPlaying ? '일시정지' : '선택 및 재생 →'}
                     </span>
                   </div>
@@ -388,23 +486,24 @@ export function DeepworkSoundscape({
                 className={`btn btn-sm ${ambientRainActive ? 'btn-emerald' : 'btn-secondary'}`}
                 onClick={toggleAmbientRain}
               >
-                {ambientRainActive ? '빗소리 ON' : '빗소리 OFF'}
+                {ambientRainActive ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                <span>{ambientRainActive ? 'ON' : 'OFF'}</span>
               </button>
             </div>
 
             {ambientRainActive && (
-              <div className="channel-slider-row mt-2">
-                <Volume2 size={13} className="text-muted" />
+              <div className="rain-volume-slider-row mt-2">
+                <span className="text-xs text-muted">볼륨:</span>
                 <input
                   type="range"
                   min="0"
-                  max="0.4"
-                  step="0.01"
+                  max="0.5"
+                  step="0.02"
                   value={ambientRainVol}
                   onChange={e => handleRainVolChange(parseFloat(e.target.value))}
-                  className="sound-range-slider"
+                  className="volume-slider flex-1"
                 />
-                <span className="mono text-xs text-muted">{Math.round(ambientRainVol * 250)}%</span>
+                <span className="mono text-xs text-emerald">{Math.round(ambientRainVol * 200)}%</span>
               </div>
             )}
           </div>

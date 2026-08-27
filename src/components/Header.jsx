@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   TrendingUp, 
   Sparkles,
-  Zap
+  Zap,
+  RotateCw
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -20,10 +21,12 @@ export function Header({
   levelInfo, 
   onOpenCommandPalette, 
   onOpenObsidianModal, 
+  onOpenLevelModal,
   activeTab,
   setActiveTab,
   isMusicPlaying,
   onToggleMusic,
+  onShuffleMusic,
   currentTrack
 }) {
   const [kstTime, setKstTime] = useState('');
@@ -109,10 +112,16 @@ export function Header({
           </div>
         </div>
 
-        {/* User Level & XP Progress HUD */}
-        <div className="user-hud-card">
+        {/* User Level & XP Progress HUD (Clickable Hub) */}
+        <div 
+          className="user-hud-card user-hud-card-interactive"
+          onClick={onOpenLevelModal}
+          title="클릭하여 레벨 및 티어 프로토콜 허브 열기"
+          role="button"
+          tabIndex={0}
+        >
           <div className="user-hud-info">
-            <div className="user-tier-badge" style={{ color: levelInfo?.tier?.color || '#00f0ff' }}>
+            <div className="user-tier-badge" style={{ color: levelInfo?.tier?.color || 'var(--purple-primary)' }}>
               <Zap size={13} />
               <span>{levelInfo?.tier?.name || 'Cyber Alpha'}</span>
               <span className="level-number mono">Lv.{levelInfo?.level || 14}</span>
@@ -135,19 +144,31 @@ export function Header({
           </div>
         </div>
 
-        {/* Action Buttons: Sound, Command Palette, Obsidian Sync */}
+        {/* Action Buttons: Sound, Music Theme Refresh, Command Palette, Obsidian Sync */}
         <div className="header-actions">
-          <button 
-            className={`btn btn-icon ${isMusicPlaying ? 'btn-sound-active' : ''}`}
-            onClick={onToggleMusic}
-            title={isMusicPlaying ? `재생 중: ${currentTrack?.title || 'YouTube BGM'} (클릭 시 일시정지)` : "YouTube Lofi/BGM 배경음악 재생"}
-          >
-            {isMusicPlaying ? (
-              <Headphones size={18} className="text-cyan animate-pulse" />
-            ) : (
-              <Volume2 size={18} />
-            )}
-          </button>
+          <div className="music-control-group">
+            <button 
+              className={`btn btn-icon ${isMusicPlaying ? 'btn-sound-active' : ''}`}
+              onClick={onToggleMusic}
+              title={isMusicPlaying ? `재생 중: ${currentTrack?.title || 'YouTube BGM'} (일시정지)` : `YouTube BGM 배경음악 재생 (${currentTrack?.badge || 'Chill Lofi'})`}
+            >
+              {isMusicPlaying ? (
+                <Headphones size={18} className="text-purple animate-pulse" />
+              ) : (
+                <Volume2 size={18} />
+              )}
+            </button>
+            <button 
+              className="btn btn-icon btn-shuffle"
+              onClick={onShuffleMusic}
+              title={`음악 테마 새로고침 (다음 곡/장르로 변경)\n현재: ${currentTrack?.title || 'Lofi'}`}
+            >
+              <RotateCw size={14} className="text-purple" />
+            </button>
+            <span className="current-music-tag text-xs font-bold mono">
+              {currentTrack?.badge?.split(' ')[0] || '🎵'}
+            </span>
+          </div>
 
           <button 
             className="btn btn-secondary btn-sm cmd-btn"
@@ -164,7 +185,7 @@ export function Header({
             onClick={onOpenObsidianModal}
           >
             <Download size={14} />
-            <span>Obsidian Sync</span>
+            <span className="btn-obsidian-text">Obsidian Sync</span>
           </button>
         </div>
       </div>

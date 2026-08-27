@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   Check,
   ListTodo,
-  Grid
+  Grid,
+  FileText
 } from 'lucide-react';
 import { CALENDAR_CATEGORIES } from '../data/calendarEvents';
 
@@ -24,7 +25,8 @@ export function DashboardCalendarWidget({
   events, 
   onToggleEvent, 
   onAddEvent, 
-  onGoToCalendar 
+  onGoToCalendar,
+  onOpenObsidianModal 
 }) {
   const todayDateStr = "2026-08-26";
   const [activeViewMode, setActiveViewMode] = useState('today'); // 'today' or 'month'
@@ -145,6 +147,15 @@ export function DashboardCalendarWidget({
               <span>한달 요약</span>
             </button>
           </div>
+
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={onOpenObsidianModal}
+            title="옵시디언 마크다운으로 일정 즉시 동기화"
+          >
+            <FileText size={13} className="text-purple" />
+            <span>싱크</span>
+          </button>
 
           <button 
             className="btn btn-secondary btn-sm"

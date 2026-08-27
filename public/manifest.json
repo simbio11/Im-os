@@ -1,0 +1,18 @@
+{
+  "short_name": "L&M OS",
+  "name": "L&M OS | Life & Market Operating System",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "./",
+  "background_color": "#0e0e15",
+  "theme_color": "#0e0e15",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "./",
+  "description": "L&M OS - 생활 관리(Daily Protocol) & 주식·매크로 인텔리전스(Market Intelligence) 통합 운영체제"
+}
