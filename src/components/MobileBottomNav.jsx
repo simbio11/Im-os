@@ -4,7 +4,7 @@ import {
   CalendarDays, 
   Activity, 
   TrendingUp, 
-  Headphones, 
+  BookOpenCheck, 
   Bot
 } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export function MobileBottomNav({ activeTab, onSelectTab }) {
     { id: 'calendar', label: '캘린더', icon: CalendarDays },
     { id: 'life', label: '라이프', icon: Activity },
     { id: 'market', label: '금융/마켓', icon: TrendingUp },
-    { id: 'soundscape', label: '딥워크', icon: Headphones },
+    { id: 'knowledge', label: '의학/논문', icon: BookOpenCheck },
     { id: 'rag', label: 'AI 검색', icon: Bot }
   ];
 

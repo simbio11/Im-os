@@ -235,18 +235,18 @@ export function Header({
           <span>PubMed & GitHub 큐레이션</span>
         </button>
         <button 
-          className={`nav-tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
-          onClick={() => setActiveTab('rag')}
-        >
-          <Bot size={15} />
-          <span>RAG 지식 질의 & AI</span>
-        </button>
-        <button 
           className={`nav-tab-btn ${activeTab === 'soundscape' ? 'active' : ''}`}
           onClick={() => setActiveTab('soundscape')}
         >
           <Headphones size={15} />
           <span>딥워크 포모도로 & 사운드</span>
+        </button>
+        <button 
+          className={`nav-tab-btn ${activeTab === 'rag' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rag')}
+        >
+          <Bot size={15} />
+          <span>RAG 지식 질의 & AI</span>
         </button>
       </nav>
     </header>
