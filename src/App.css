@@ -5671,8 +5671,8 @@
 .dashboard-cockpit-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 @media (min-width: 1024px) {
@@ -5685,7 +5685,7 @@
   background: var(--bg-glass-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
@@ -5701,7 +5701,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -5721,8 +5721,8 @@
 }
 
 .cockpit-icon-badge {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -5739,8 +5739,8 @@
 .cockpit-split-columns {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
-  margin-top: 14px;
+  gap: 14px;
+  margin-top: 10px;
   flex: 1;
 }
 
@@ -5760,8 +5760,8 @@
 .cockpit-col-right {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -5769,7 +5769,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 /* 1. Mini Month Calendar Styling */
