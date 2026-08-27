@@ -495,8 +495,22 @@ export function App() {
         {/* TAB 1: EXECUTIVE COCKPIT / OVERVIEW DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="dashboard-overview-view">
-            {/* Top Quick Status HUD Cards */}
-            <div className="hud-metric-cards-row" style={{ marginBottom: '20px' }}>
+            {/* 1. 2x2 Master Executive Cockpit Grid (Calendar, Life, Stocks, PubMed) */}
+            <DashboardCockpit
+              calendarEvents={calendarEvents}
+              onToggleCalendarEvent={handleToggleCalendarEvent}
+              onAddCalendarEvent={handleAddCalendarEvent}
+              routines={routines}
+              onToggleRoutine={handleToggleRoutine}
+              onAddRoutine={handleAddRoutine}
+              dietLogs={dietLogs}
+              userProfile={userProfile}
+              onNavigateTab={setActiveTab}
+              onOpenObsidianModal={() => setObsidianModalOpen(true)}
+            />
+
+            {/* 2. Quick Status HUD Cards (Moved below Stocks & PubMed) */}
+            <div className="hud-metric-cards-row" style={{ marginTop: '20px', marginBottom: '20px' }}>
               {/* Card 1: Investment Surplus */}
               <div 
                 className="hud-card glass-card glass-card-interactive" 
@@ -566,21 +580,7 @@ export function App() {
               </div>
             </div>
 
-            {/* 2x2 Master Executive Cockpit Grid (User Mockup Match) */}
-            <DashboardCockpit
-              calendarEvents={calendarEvents}
-              onToggleCalendarEvent={handleToggleCalendarEvent}
-              onAddCalendarEvent={handleAddCalendarEvent}
-              routines={routines}
-              onToggleRoutine={handleToggleRoutine}
-              onAddRoutine={handleAddRoutine}
-              dietLogs={dietLogs}
-              userProfile={userProfile}
-              onNavigateTab={setActiveTab}
-              onOpenObsidianModal={() => setObsidianModalOpen(true)}
-            />
-
-            {/* Financial Surplus & Asset Allocation Engine */}
+            {/* 3. Financial Surplus & Asset Allocation Engine */}
             <div style={{ marginTop: '24px' }}>
               <ExpenseTracker
                 userProfile={userProfile}
