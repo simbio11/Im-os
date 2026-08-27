@@ -26,6 +26,7 @@ import { DeepworkSoundscape } from './components/DeepworkSoundscape';
 import { CalendarScheduler } from './components/CalendarScheduler';
 import { DashboardCalendarWidget } from './components/DashboardCalendarWidget';
 import { DashboardMarketWidget } from './components/DashboardMarketWidget';
+import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
 
 import { 
@@ -494,22 +495,8 @@ export function App() {
         {/* TAB 1: EXECUTIVE COCKPIT / OVERVIEW DASHBOARD */}
         {activeTab === 'dashboard' && (
           <div className="dashboard-overview-view">
-            {/* Top Executive Command Deck */}
-            <div className="top-executive-deck-grid">
-              <DashboardCalendarWidget
-                events={calendarEvents}
-                onToggleEvent={handleToggleCalendarEvent}
-                onAddEvent={handleAddCalendarEvent}
-                onGoToCalendar={() => setActiveTab('calendar')}
-                onOpenObsidianModal={() => setObsidianModalOpen(true)}
-              />
-              <DashboardMarketWidget
-                onGoToMarket={() => setActiveTab('market')}
-              />
-            </div>
-
             {/* Top Quick Status HUD Cards */}
-            <div className="hud-metric-cards-row mt-4">
+            <div className="hud-metric-cards-row" style={{ marginBottom: '20px' }}>
               {/* Card 1: Investment Surplus */}
               <div 
                 className="hud-card glass-card glass-card-interactive" 
@@ -579,41 +566,29 @@ export function App() {
               </div>
             </div>
 
-            {/* Dashboard 2-Column Split: Market Intelligence & Daily Life Protocol */}
-            <div className="dashboard-grid mt-4">
-              {/* Left 7 Columns: Market AM/PM & Watchlist Snapshot */}
-              <div className="dash-col-left">
-                <DailyRoutines
-                  routines={routines}
-                  onToggleRoutine={handleToggleRoutine}
-                  onAddRoutine={handleAddRoutine}
-                  onDeleteRoutine={handleDeleteRoutine}
-                  onOpenObsidianModal={() => setObsidianModalOpen(true)}
-                />
+            {/* 2x2 Master Executive Cockpit Grid (User Mockup Match) */}
+            <DashboardCockpit
+              calendarEvents={calendarEvents}
+              onToggleCalendarEvent={handleToggleCalendarEvent}
+              onAddCalendarEvent={handleAddCalendarEvent}
+              routines={routines}
+              onToggleRoutine={handleToggleRoutine}
+              onAddRoutine={handleAddRoutine}
+              dietLogs={dietLogs}
+              userProfile={userProfile}
+              onNavigateTab={setActiveTab}
+              onOpenObsidianModal={() => setObsidianModalOpen(true)}
+            />
 
-                <div className="mt-4">
-                  <MarketBriefing onOpenObsidianModal={() => setObsidianModalOpen(true)} />
-                </div>
-              </div>
-
-              {/* Right 5 Columns: Routines, Expense, & Deepwork Quick Widgets */}
-              <div className="dash-col-right">
-                <ExpenseTracker
-                  userProfile={userProfile}
-                  expenses={expenses}
-                  onAddExpense={handleAddExpense}
-                  onDeleteExpense={handleDeleteExpense}
-                  onUpdateUserProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
-                />
-
-                <div className="mt-4">
-                  <SecEarningsBrief />
-                </div>
-
-                <div className="mt-4">
-                  <PubMedCurator />
-                </div>
-              </div>
+            {/* Financial Surplus & Asset Allocation Engine */}
+            <div style={{ marginTop: '24px' }}>
+              <ExpenseTracker
+                userProfile={userProfile}
+                expenses={expenses}
+                onAddExpense={handleAddExpense}
+                onDeleteExpense={handleDeleteExpense}
+                onUpdateUserProfile={(updates) => setUserProfile(prev => ({ ...prev, ...updates }))}
+              />
             </div>
           </div>
         )}

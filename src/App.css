@@ -5622,6 +5622,397 @@
   font-size: 10px;
 }
 
+/* ==========================================================
+   Cockpit 2x2 Command Grid Styling (Vanilla CSS)
+   ========================================================== */
+.dashboard-cockpit-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-cockpit-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cockpit-card {
+  background: var(--bg-glass-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 370px;
+}
+
+.cockpit-card:hover {
+  border-color: var(--border-glass);
+  box-shadow: var(--shadow-md);
+}
+
+.cockpit-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cockpit-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cockpit-title-group h4 {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-highlight);
+  margin: 0;
+}
+
+.cockpit-icon-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+}
+
+.cockpit-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cockpit-split-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 14px;
+  flex: 1;
+}
+
+@media (min-width: 600px) {
+  .cockpit-split-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cockpit-col-left,
+.cockpit-col-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.cockpit-section-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* 1. Mini Month Calendar Styling */
+.cockpit-mini-cal-wrapper {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cockpit-weekdays-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.cockpit-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cockpit-day-tile {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.cockpit-day-tile.current-month {
+  color: var(--text-main);
+}
+
+.cockpit-day-tile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-highlight);
+}
+
+.cockpit-day-tile.is-today {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: var(--purple-primary);
+  color: #d8b4fe;
+  font-weight: 800;
+}
+
+.cockpit-day-tile.is-selected {
+  background: var(--purple-primary) !important;
+  color: #fff !important;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+.cockpit-event-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--cyan-primary);
+  position: absolute;
+  bottom: 2px;
+}
+
+.cockpit-agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.cockpit-agenda-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cockpit-agenda-row:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass);
+}
+
+.cockpit-agenda-row.completed {
+  opacity: 0.55;
+}
+
+.cockpit-agenda-row.completed .agenda-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.cockpit-agenda-bar {
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--purple-primary);
+}
+
+/* 2. Daily Routines & Diet Styling */
+.cockpit-routines-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.cockpit-routine-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cockpit-routine-item:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass);
+}
+
+.cockpit-routine-item.completed {
+  opacity: 0.55;
+}
+
+.cockpit-routine-item.completed .routine-name {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.cockpit-diet-box {
+  background: rgba(0, 240, 255, 0.03);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cockpit-macro-bar-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.cockpit-macro-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* 3. Stocks & News */
+.cockpit-index-mini-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+
+.cockpit-watchlist-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.cockpit-watchlist-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+}
+
+.cockpit-news-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cockpit-news-item {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cockpit-news-item:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* 4. PubMed & Topic Tags */
+.cockpit-paper-item {
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+}
+
+.cockpit-ai-findings {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 240, 255, 0.05);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.cockpit-topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cockpit-topic-chip {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cockpit-topic-chip:hover {
+  border-color: var(--border-glass);
+  color: var(--text-highlight);
+}
+
+.cockpit-topic-chip.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: var(--purple-primary);
+  color: #fff;
+}
+
+.cockpit-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.cockpit-link-btn:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-glass);
+  color: var(--text-highlight);
+}
+
+
 
 
 
