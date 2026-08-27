@@ -69,6 +69,23 @@ try {
 export { auth, db, googleProvider, isConfigured };
 
 /**
+ * Fetch initial user data from Firestore on login
+ */
+export async function getUserCloudData(uid) {
+  if (!db || !uid) return null;
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    const snap = await getDoc(userDocRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (e) {
+    console.error("Error fetching initial cloud data:", e);
+  }
+  return null;
+}
+
+/**
  * Save user data to Firestore under their UID
  */
 export async function syncUserDataToCloud(uid, data) {
@@ -77,6 +94,7 @@ export async function syncUserDataToCloud(uid, data) {
     const userDocRef = doc(db, 'users', uid);
     await setDoc(userDocRef, {
       ...data,
+      updatedAt: Date.now(),
       lastSyncedAt: new Date().toISOString()
     }, { merge: true });
     return true;
@@ -92,8 +110,9 @@ export async function syncUserDataToCloud(uid, data) {
 export function subscribeToCloudUserData(uid, onDataUpdate) {
   if (!db || !uid) return () => {};
   const userDocRef = doc(db, 'users', uid);
-  return onSnapshot(userDocRef, (docSnap) => {
-    if (docSnap.exists()) {
+  return onSnapshot(userDocRef, { includeMetadataChanges: true }, (docSnap) => {
+    // Ignore local uncommitted writes to prevent echo feedback loop
+    if (docSnap.exists() && !docSnap.metadata.hasPendingWrites) {
       onDataUpdate(docSnap.data());
     }
   }, (error) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { CommandPalette } from './components/CommandPalette';
 import { LevelUpModal } from './components/LevelUpModal';
@@ -8,7 +8,8 @@ import { AuthSyncModal } from './components/AuthSyncModal';
 import { 
   auth, 
   syncUserDataToCloud, 
-  subscribeToCloudUserData 
+  subscribeToCloudUserData,
+  getUserCloudData 
 } from './services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { DailyRoutines } from './components/DailyRoutines';
@@ -148,11 +149,47 @@ export function App() {
   const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
   const [ragInitialQuery, setRagInitialQuery] = useState('');
 
-  // Monitor Auth State
+  // Sync Loop & Echo Prevention Refs
+  const isRemoteUpdateRef = useRef(false);
+  const isHydratedRef = useRef(false);
+
+  // Monitor Auth State & Initial Cloud Hydration
   useEffect(() => {
     if (auth) {
-      const unsubscribe = onAuthStateChanged(auth, user => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setCurrentUser(user);
+        if (user?.uid) {
+          isHydratedRef.current = false;
+          try {
+            const cloudData = await getUserCloudData(user.uid);
+            if (cloudData) {
+              // Apply existing cloud data to local state without triggering cloud write-back
+              isRemoteUpdateRef.current = true;
+              if (cloudData.userProfile) setUserProfile(cloudData.userProfile);
+              if (cloudData.routines) setRoutines(cloudData.routines);
+              if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs);
+              if (cloudData.runningLogs) setRunningLogs(cloudData.runningLogs);
+              if (cloudData.expenses) setExpenses(cloudData.expenses);
+              if (cloudData.calendarEvents) setCalendarEvents(cloudData.calendarEvents);
+            } else {
+              // Initial push for newly registered account
+              await syncUserDataToCloud(user.uid, {
+                userProfile,
+                routines,
+                dietLogs,
+                runningLogs,
+                expenses,
+                calendarEvents
+              });
+            }
+          } catch (e) {
+            console.error("Hydration error:", e);
+          } finally {
+            isHydratedRef.current = true;
+          }
+        } else {
+          isHydratedRef.current = false;
+        }
       });
       return () => unsubscribe();
     }
@@ -162,7 +199,8 @@ export function App() {
   useEffect(() => {
     if (currentUser?.uid) {
       const unsubscribe = subscribeToCloudUserData(currentUser.uid, (cloudData) => {
-        if (cloudData) {
+        if (cloudData && isHydratedRef.current) {
+          isRemoteUpdateRef.current = true;
           if (cloudData.userProfile) setUserProfile(cloudData.userProfile);
           if (cloudData.routines) setRoutines(cloudData.routines);
           if (cloudData.dietLogs) setDietLogs(cloudData.dietLogs);
@@ -175,18 +213,25 @@ export function App() {
     }
   }, [currentUser]);
 
-  // Sync to Cloud when local states change
+  // Sync to Cloud ONLY when local user makes modifications (not on remote echo or unhydrated mount)
   useEffect(() => {
-    if (currentUser?.uid) {
-      syncUserDataToCloud(currentUser.uid, {
-        userProfile,
-        routines,
-        dietLogs,
-        runningLogs,
-        expenses,
-        calendarEvents
-      });
+    if (!currentUser?.uid || !isHydratedRef.current) {
+      return;
     }
+
+    if (isRemoteUpdateRef.current) {
+      isRemoteUpdateRef.current = false;
+      return;
+    }
+
+    syncUserDataToCloud(currentUser.uid, {
+      userProfile,
+      routines,
+      dietLogs,
+      runningLogs,
+      expenses,
+      calendarEvents
+    });
   }, [currentUser, userProfile, routines, dietLogs, runningLogs, expenses, calendarEvents]);
 
   // Global YouTube Music State
