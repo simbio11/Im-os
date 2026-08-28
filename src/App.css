@@ -5682,13 +5682,13 @@
 }
 
 .cockpit-card {
-  background: linear-gradient(145deg, rgba(22, 17, 36, 0.72) 0%, rgba(13, 9, 24, 0.85) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-glass-card);
+  border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px var(--cyan-glow);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   position: relative;
@@ -5706,21 +5706,21 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-  opacity: 0.6;
+  background: linear-gradient(90deg, transparent, var(--cyan-primary), transparent);
+  opacity: 0.3;
   transition: opacity 0.3s ease;
 }
 
 .cockpit-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(168, 85, 247, 0.45);
-  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.75), 0 0 24px rgba(168, 85, 247, 0.14);
-  background: linear-gradient(145deg, rgba(28, 21, 46, 0.8) 0%, rgba(16, 11, 30, 0.9) 100%);
+  transform: translateY(-3px);
+  border-color: var(--cyan-primary);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.75), 0 0 25px var(--cyan-glow);
+  background: var(--bg-surface-elevated);
 }
 
 .cockpit-card:hover::before {
-  opacity: 1;
-  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.8), transparent);
+  opacity: 0.8;
+  background: linear-gradient(90deg, transparent, var(--cyan-primary), transparent);
 }
 
 .cockpit-card-header {
