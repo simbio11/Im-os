@@ -16,11 +16,14 @@ import {
   Calendar,
   DollarSign,
   Activity,
-  Zap
+  Zap,
+  TrendingUp,
+  Flame,
+  MessageSquare
 } from 'lucide-react';
-import { queryKnowledgeBase } from '../data/knowledgeBase';
-import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '../services/geminiService';
-import { GeminiApiKeyModal } from './GeminiApiKeyModal';
+import { queryLocalAiEngine } from '../services/localAiEngine.js';
+import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '../services/geminiService.js';
+import { GeminiApiKeyModal } from './GeminiApiKeyModal.jsx';
 
 export function RagAssistant({ 
   initialQuery,
@@ -35,10 +38,8 @@ export function RagAssistant({
     {
       id: 'm1',
       sender: 'assistant',
-      text: `안녕하세요! **L&M OS 최고 전략 AI 인텔리전스 비서**입니다.\n\n` +
-        `축적된 **일정 캘린더, 장전/장후 주식 브리핑, 거시경제 지표, 데일리 루틴, 5km 러닝, 식단 칼로리/단백질, 투자 잉여금 가계부 및 PubMed 학술 논문** 데이터를 종합 분석하여 실시간 질의에 전문적으로 응답합니다.\n\n` +
-        `궁금하신 내용을 자유롭게 질문해보세요!`,
-      sources: ["L&M OS Global Kernel", "Real-time Live Context"]
+      text: `안녕하세요! **L&M OS 최고 전략 AI 비서**입니다.\n\n사용자의 **일정 캘린더, 장전/장후 주식 브리핑, 거시경제 지표, 데일리 루틴, 5km 러닝, 식단 칼로리/단백질, 투자 가용 잉여금 및 PubMed 의학 지식**을 모두 파악하고 있습니다.\n\n궁금하신 점을 편하게 질문해보세요!`,
+      sources: ["L&M OS Live Kernel", "Full System Context"]
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -61,7 +62,7 @@ export function RagAssistant({
     const text = (queryToSend || inputText).trim();
     if (!text || isLoading) return;
 
-    // Add user message
+    // 1. Add user message
     const userMsg = { id: `u-${Date.now()}`, sender: 'user', text };
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
@@ -69,7 +70,7 @@ export function RagAssistant({
 
     const currentKey = getStoredGeminiApiKey();
 
-    // 1. If Gemini API Key is configured, execute advanced multi-modal LLM reasoning
+    // 2. Try Gemini Live API if key is present
     if (currentKey && currentKey.startsWith('AIza')) {
       try {
         const liveContext = buildGlobalSystemContext({
@@ -81,15 +82,10 @@ export function RagAssistant({
           userProfile
         });
 
-        const ragDocContext = queryKnowledgeBase(text);
-
         const systemInstruction = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 전략가입니다.
-아래 제공된 사용자의 실시간 데이터(캘린더 일정, 라이프 루틴, 식단, 러닝, 가계부 잉여금, 거시경제 지표, PubMed 논문)를 완벽히 이해하고, 사용자의 질문에 최고 수준의 정확도와 통찰력을 담아 전문적인 한국어 마크다운으로 답변하세요.
+아래 제공된 사용자의 실시간 데이터(캘린더 일정, 루틴, 식단, 러닝, 가계부 잉여금, 거시경제 지표, PubMed 논문)를 기반으로 사용자의 질문에 군더더기 없이 간결하고 명확하며 세련된 한국어 마크다운으로 답변하세요.
 
-${liveContext}
-
-[추가 색인 지식 베이스]:
-${ragDocContext?.answer || '지식 베이스 인덱스 정상 가동 중'}`;
+${liveContext}`;
 
         const responseText = await callGeminiApi({
           prompt: text,
@@ -105,32 +101,39 @@ ${ragDocContext?.answer || '지식 베이스 인덱스 정상 가동 중'}`;
               id: `a-${Date.now()}`,
               sender: 'assistant',
               text: responseText,
-              sources: ["Google Gemini 1.5 Live AI", "L&M OS Live Real-time Context", ...(ragDocContext?.sources || [])]
+              sources: ["Google Gemini 1.5 Live AI", "L&M OS Live Context"]
             }
           ]);
           setIsLoading(false);
           return;
         }
       } catch (err) {
-        console.warn("Gemini Live API call error, falling back to smart local engine:", err);
+        console.warn("Gemini API call failed, using built-in AI engine:", err);
       }
     }
 
-    // 2. Local Intelligent Fallback Engine
+    // 3. Built-in Local AI Engine (Instant, Accurate & Contextual)
     setTimeout(() => {
-      const ragResult = queryKnowledgeBase(text);
+      const localResult = queryLocalAiEngine(text, {
+        calendarEvents,
+        routines,
+        dietLogs,
+        runningLogs,
+        expenses,
+        userProfile
+      });
+
       setMessages(prev => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           sender: 'assistant',
-          text: ragResult.answer + 
-            `\n\n> 💡 **안내**: 상단의 **[🔑 Gemini Key 설정]**에 무료 Google Gemini API Key를 등록하시면 실시간 전체 캘린더/가계부/논문 데이터를 결합한 초고지능 AI 답변을 즉시 받으실 수 있습니다.`,
-          sources: ["L&M OS Local Strategic Engine", ...(ragResult?.sources || [])]
+          text: localResult.answer,
+          sources: localResult.sources
         }
       ]);
       setIsLoading(false);
-    }, 400);
+    }, 250);
   };
 
   const handlePresetClick = (q) => {
@@ -138,120 +141,120 @@ ${ragDocContext?.answer || '지식 베이스 인덱스 정상 가동 중'}`;
   };
 
   return (
-    <div className="rag-assistant-container glass-card">
-      {/* Top RAG Header */}
-      <div className="rag-header-bar">
-        <div className="panel-title-with-icon">
-          <div className="rag-avatar-glow">
-            <Sparkles size={20} className="text-cyan animate-pulse" />
+    <div className="rag-chat-wrapper glass-card">
+      {/* Top Header */}
+      <div className="rag-header-clean">
+        <div className="rag-header-info">
+          <div className="rag-header-icon-box">
+            <Sparkles size={18} className="text-cyan animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4>브리핑 & 캘린더 통합 RAG AI 인텔리전스</h4>
-              <span className={`badge ${apiKey ? 'badge-emerald' : 'badge-amber'}`}>
-                {apiKey ? '✨ Gemini 1.5 Live AI 가동 중' : '⚡ 로컬 지식 엔진'}
+              <h3 className="rag-header-title">L&M OS 전략 AI 어시스턴트</h3>
+              <span className={`status-pill ${apiKey ? 'active' : 'local'}`}>
+                {apiKey ? '🟢 Gemini 1.5 Live' : '⚡ 스마트 내장 AI'}
               </span>
             </div>
-            <p className="text-muted text-xs">
-              일정 캘린더, 시장 브리핑, 거시경제 지표, 루틴/식단/잉여금 및 PubMed 의학 데이터베이스 기반 심층 질의응답
+            <p className="rag-header-subtitle">
+              캘린더 일정, 가계부 잉여금, 식단/러닝, 주식 브리핑 및 PubMed 학술 지식 통합 질의
             </p>
           </div>
         </div>
 
-        <div className="rag-actions">
+        <button 
+          className="btn btn-secondary btn-sm key-config-btn"
+          onClick={() => setShowKeyModal(true)}
+        >
+          <Key size={13} className={apiKey ? 'text-emerald' : 'text-amber'} />
+          <span>{apiKey ? 'Gemini Key 연동됨' : 'Gemini Key 설정'}</span>
+        </button>
+      </div>
+
+      {/* Suggested Prompts Bar */}
+      <div className="rag-prompt-chips-container">
+        <div className="rag-prompt-chips-scroll">
           <button 
-            className="btn btn-secondary btn-sm"
-            onClick={() => setShowKeyModal(true)}
+            className="rag-chip"
+            onClick={() => handlePresetClick("넌 뭘 할 수 있어?")}
           >
-            <Key size={13} className={apiKey ? 'text-emerald' : 'text-amber'} />
-            <span>{apiKey ? 'Gemini Key 설정됨' : 'Gemini Key 설정 (무료)'}</span>
+            <Bot size={13} className="text-cyan" />
+            <span>🤖 AI 비서 기능 소개</span>
+          </button>
+          <button 
+            className="rag-chip"
+            onClick={() => handlePresetClick("내일 일정 브리핑해줘")}
+          >
+            <Calendar size={13} className="text-purple" />
+            <span>📅 내일 일정 브리핑</span>
+          </button>
+          <button 
+            className="rag-chip"
+            onClick={() => handlePresetClick("현재 투자 가용 잉여금과 자산 배분 전략 알려줘")}
+          >
+            <DollarSign size={13} className="text-emerald" />
+            <span>💵 투자 잉여금 & 자산배분</span>
+          </button>
+          <button 
+            className="rag-chip"
+            onClick={() => handlePresetClick("엔비디아(NVDA) 블랙웰 실적 및 AI 가속기 전망 요약해줘")}
+          >
+            <TrendingUp size={13} className="text-amber" />
+            <span>🚀 엔비디아 실적 & 블랙웰</span>
+          </button>
+          <button 
+            className="rag-chip"
+            onClick={() => handlePresetClick("오늘 먹은 단백질이랑 식단 영양 분석해줘")}
+          >
+            <Activity size={13} className="text-rose" />
+            <span>🥗 식단 & 단백질 분석</span>
           </button>
         </div>
       </div>
 
-      {/* Suggested Questions Chips */}
-      <div className="rag-suggestions-row">
-        <span className="text-2xs text-muted font-bold mr-1">추천 질문:</span>
-        <button 
-          className="rag-chip-btn"
-          onClick={() => handlePresetClick("내일 일정과 주요 할 일 브리핑해줘")}
-        >
-          📅 내일 일정 & 할일 브리핑
-        </button>
-        <button 
-          className="rag-chip-btn"
-          onClick={() => handlePresetClick("최근 금리 변동에 따른 빅테크 기술주 동향 및 투자 가이드 요약해줘")}
-        >
-          📈 금리 변동 & 기술주 동향
-        </button>
-        <button 
-          className="rag-chip-btn"
-          onClick={() => handlePresetClick("엔비디아(NVDA) 블랙웰 실적 및 AI 가속기 전망 요약해줘")}
-        >
-          🚀 엔비디아 실적 & 블랙웰 전망
-        </button>
-        <button 
-          className="rag-chip-btn"
-          onClick={() => handlePresetClick("현재 투자 가용 잉여금과 자산 배분 전략 알려줘")}
-        >
-          💵 투자 가용 잉여금 & 자산배분
-        </button>
-        <button 
-          className="rag-chip-btn"
-          onClick={() => handlePresetClick("5km 러닝이 딥워크 집중력과 대사에 미치는 영향 요약해줘")}
-        >
-          🏃 5km 러닝 & 딥워크 인지 효과
-        </button>
-      </div>
-
-      {/* Messages Feed */}
-      <div className="rag-messages-feed">
+      {/* Messages Stream */}
+      <div className="rag-stream-feed">
         {messages.map(msg => (
-          <div key={msg.id} className={`rag-message-item ${msg.sender}`}>
-            <div className="rag-message-avatar">
-              {msg.sender === 'assistant' ? (
-                <div className="avatar-ai">
-                  <Bot size={16} className="text-cyan" />
-                </div>
-              ) : (
-                <div className="avatar-user">
-                  <User size={16} className="text-purple" />
+          <div key={msg.id} className={`rag-stream-row ${msg.sender}`}>
+            {msg.sender === 'assistant' && (
+              <div className="rag-bot-avatar">
+                <Bot size={16} className="text-cyan" />
+              </div>
+            )}
+
+            <div className={`rag-bubble ${msg.sender}`}>
+              <div className="rag-bubble-body markdown-body">
+                {msg.text.split('\n').map((line, idx) => (
+                  <p key={idx}>{line}</p>
+                ))}
+              </div>
+
+              {msg.sources && msg.sources.length > 0 && (
+                <div className="rag-sources-chips">
+                  <span className="source-label">참조:</span>
+                  {msg.sources.map((src, sIdx) => (
+                    <span key={sIdx} className="source-badge">{src}</span>
+                  ))}
                 </div>
               )}
             </div>
 
-            <div className="rag-message-bubble-wrapper">
-              <div className={`rag-message-bubble ${msg.sender}`}>
-                <div className="rag-message-text markdown-body">
-                  {msg.text.split('\n').map((line, idx) => (
-                    <p key={idx}>{line}</p>
-                  ))}
-                </div>
-
-                {msg.sources && msg.sources.length > 0 && (
-                  <div className="rag-sources-row">
-                    <span className="source-label">참조 소스:</span>
-                    {msg.sources.map((src, sIdx) => (
-                      <span key={sIdx} className="source-tag">{src}</span>
-                    ))}
-                  </div>
-                )}
+            {msg.sender === 'user' && (
+              <div className="rag-user-avatar">
+                <User size={16} className="text-purple" />
               </div>
-            </div>
+            )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="rag-message-item assistant">
-            <div className="rag-message-avatar">
-              <div className="avatar-ai animate-pulse">
-                <Bot size={16} className="text-cyan" />
-              </div>
+          <div className="rag-stream-row assistant">
+            <div className="rag-bot-avatar">
+              <Bot size={16} className="text-cyan" />
             </div>
-            <div className="rag-message-bubble assistant loading">
-              <div className="flex items-center gap-2 text-xs text-muted">
+            <div className="rag-bubble assistant loading-bubble">
+              <div className="flex items-center gap-2">
                 <Sparkles size={14} className="animate-spin text-cyan" />
-                <span>실시간 데이터베이스 색인 및 Gemini 지능 분석 중...</span>
+                <span className="text-xs text-muted">지능형 데이터베이스 분석 중...</span>
               </div>
             </div>
           </div>
@@ -260,39 +263,40 @@ ${ragDocContext?.answer || '지식 베이스 인덱스 정상 가동 중'}`;
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input Bar */}
-      <div className="rag-input-box">
-        <input 
-          type="text"
-          className="input-text rag-input"
-          placeholder="시장 동향, 캘린더 일정, 5km 러닝, 식단 분석, 투자 잉여금 관련 질문을 자유롭게 입력하세요..."
-          value={inputText}
-          onChange={e => setInputText(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') handleSend();
-          }}
-          disabled={isLoading}
-        />
-        <button 
-          className="btn btn-primary btn-sm rag-send-btn"
-          onClick={() => handleSend()}
-          disabled={isLoading || !inputText.trim()}
-        >
-          <Send size={15} />
-          <span>질의하기</span>
-        </button>
+      {/* Input Bar */}
+      <div className="rag-input-container">
+        <div className="rag-input-glass">
+          <input 
+            type="text"
+            className="rag-text-input"
+            placeholder="일정, 잉여금, 식단, 주식 동향 등에 대해 무엇이든 질문하세요..."
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSend();
+            }}
+            disabled={isLoading}
+            autoFocus
+          />
+          <button 
+            className="rag-submit-btn"
+            onClick={() => handleSend()}
+            disabled={isLoading || !inputText.trim()}
+          >
+            <Send size={15} />
+            <span>질문</span>
+          </button>
+        </div>
       </div>
 
-      {/* Gemini API Key Modal */}
+      {/* Key Modal */}
       <GeminiApiKeyModal
         isOpen={showKeyModal}
         onClose={() => {
           setShowKeyModal(false);
           setApiKey(getStoredGeminiApiKey());
         }}
-        onApiKeyUpdated={(newKey) => {
-          setApiKey(newKey);
-        }}
+        onApiKeyUpdated={(newKey) => setApiKey(newKey)}
       />
     </div>
   );

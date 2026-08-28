@@ -1,5 +1,6 @@
 import { getTodayDateStr, getRelativeDateStr, formatKoreanDate, timeStrToMinutes, minutesToTimeStr } from './dateUtils.js';
 import { callGeminiApi, getStoredGeminiApiKey } from '../services/geminiService.js';
+import { queryLocalAiEngine } from '../services/localAiEngine.js';
 
 /**
  * Intelligent Korean Natural Language Schedule Parser
@@ -413,7 +414,7 @@ export async function askScheduleQuestion({
   if (key && key.startsWith('AIza')) {
     try {
       const prompt = `당신은 L&M OS의 일정 및 라이프 프로토콜 전문 지능형 AI 비서입니다.
-아래 사용자의 등록된 일정 및 루틴 데이터를 바탕으로 질문에 친절하고 정확하게 한국어로 답변하세요.
+아래 사용자의 등록된 일정 및 루틴 데이터를 바탕으로 사용자의 질문에 군더더기 없이 간결하고 명확하게 한국어로 답변하세요.
 
 [현재 날짜]: ${todayStr} (${formatKoreanDate(todayStr)})
 [사용자 등록 일정 목록 (총 ${calendarEvents.length}건)]:
@@ -436,46 +437,10 @@ ${question}`;
         source: 'Gemini 1.5 Live AI'
       };
     } catch (err) {
-      console.warn("Schedule QA Gemini call error:", err);
+      console.warn("Schedule QA Gemini call error, using local AI engine:", err);
     }
   }
 
-  // Local Offline Smart QA Generator
-  const lower = question.toLowerCase();
-  const todayEvents = calendarEvents.filter(e => e.date === todayStr);
-  const tomorrowEvents = calendarEvents.filter(e => e.date === getRelativeDateStr(1));
-
-  if (lower.includes('내일') || lower.includes('tomorrow')) {
-    if (tomorrowEvents.length === 0) {
-      return {
-        answer: `내일(${getRelativeDateStr(1)})에 등록된 일정이 없습니다. AI 일정 편집기를 통해 일정을 자유롭게 추가해보세요!`,
-        source: 'L&M OS Local Calendar Index'
-      };
-    }
-    const list = tomorrowEvents.map(e => `• **${e.startTime} - ${e.endTime}**: ${e.title} (${e.location || '홈 오피스'})`).join('\n');
-    return {
-      answer: `내일(${getRelativeDateStr(1)})에는 총 **${tomorrowEvents.length}건**의 일정이 예정되어 있습니다:\n\n${list}`,
-      source: 'L&M OS Local Calendar Index'
-    };
-  }
-
-  if (lower.includes('오늘') || lower.includes('today') || lower.includes('할일')) {
-    if (todayEvents.length === 0) {
-      return {
-        answer: `오늘(${todayStr})에 등록된 일정이 없습니다. 데일리 루틴 및 딥워크 일정을 등록해보세요!`,
-        source: 'L&M OS Local Calendar Index'
-      };
-    }
-    const completed = todayEvents.filter(e => e.completed).length;
-    const list = todayEvents.map(e => `• [${e.completed ? '✅' : '⏳'}] **${e.startTime} - ${e.endTime}**: ${e.title}`).join('\n');
-    return {
-      answer: `오늘(${todayStr}) 일정은 총 **${todayEvents.length}건 중 ${completed}건 완수**되었습니다:\n\n${list}`,
-      source: 'L&M OS Local Calendar Index'
-    };
-  }
-
-  return {
-    answer: `현재 등록된 전체 일정은 **총 ${calendarEvents.length}건**입니다. 보다 고차원적인 자연어 분석 및 추천을 위해 상단에서 **Gemini API Key**를 등록하시면 전용 AI 브리핑을 받으실 수 있습니다.`,
-    source: 'L&M OS Local Schedule Kernel'
-  };
+  // Built-in Local AI Engine
+  return queryLocalAiEngine(question, { calendarEvents, routines });
 }

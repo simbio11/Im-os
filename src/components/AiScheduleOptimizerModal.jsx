@@ -378,31 +378,35 @@ export function AiScheduleOptimizerModal({
             </div>
 
             {/* Chat Messages Container */}
-            <div className="chat-messages-container" style={{ maxHeight: '300px', minHeight: '180px', overflowY: 'auto', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+            <div className="schedule-chat-container">
               {chatMessages.map(msg => (
-                <div key={msg.id} className={`chat-bubble-row ${msg.sender === 'user' ? 'user' : 'assistant'} mb-2.5`}>
-                  <div className={`chat-bubble ${msg.sender === 'user' ? 'user-bubble' : 'ai-bubble'}`} style={{ padding: '10px 14px', borderRadius: '10px', background: msg.sender === 'user' ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--border-subtle)' }}>
-                    <p className="text-xs text-highlight whitespace-pre-line" style={{ margin: 0 }}>{msg.text}</p>
+                <div key={msg.id} className={`schedule-chat-row ${msg.sender}`}>
+                  <div className={`schedule-chat-bubble ${msg.sender}`}>
+                    <div className="text-xs leading-relaxed whitespace-pre-line">{msg.text}</div>
                     {msg.source && (
-                      <span className="text-3xs text-muted block mt-1.5 font-mono">출처: {msg.source}</span>
+                      <span className="schedule-source-tag">출처: {msg.source}</span>
                     )}
                   </div>
                 </div>
               ))}
               {isChatLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted p-2">
-                  <Wand2 size={13} className="animate-spin text-cyan" />
-                  <span>일정 지능 데이터 분석 중...</span>
+                <div className="schedule-chat-row assistant">
+                  <div className="schedule-chat-bubble assistant loading">
+                    <div className="flex items-center gap-2 text-xs text-muted">
+                      <Wand2 size={13} className="animate-spin text-cyan" />
+                      <span>일정 데이터 분석 중...</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Chat Input */}
-            <div className="flex gap-2">
+            <div className="schedule-chat-input-row">
               <input
                 type="text"
                 className="input-text text-xs flex-1"
-                placeholder="내 일정에 대해 무엇이든 물어보세요 (예: '내일 일정 브리핑해줘')"
+                placeholder="일정에 대해 물어보세요 (예: '학회는 언제 가지?', '내일 일정 요약')"
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => {
@@ -414,7 +418,7 @@ export function AiScheduleOptimizerModal({
                 onClick={() => handleSendChat()}
                 disabled={isChatLoading || !chatInput.trim()}
               >
-                <Send size={14} />
+                <Send size={13} />
                 <span>질문</span>
               </button>
             </div>
