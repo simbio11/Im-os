@@ -17,13 +17,16 @@ import {
   Search,
   CheckCircle2,
   TrendingUp,
-  Cpu,
-  HeartPulse
+  FileText,
+  HelpCircle,
+  Eye
 } from 'lucide-react';
 import { 
   fetchLivePubMedPapers, 
   PUBMED_TOPIC_QUERIES, 
-  EXTENDED_PUBMED_DATABASE 
+  EXTENDED_PUBMED_DATABASE,
+  translateMedicalTitleToKorean,
+  generateKoreanMedicalSummary
 } from '../services/pubmedService.js';
 import { 
   PUBMED_PAPERS_DB, 
@@ -73,6 +76,7 @@ export function PubMedCurator() {
   // Search keyword input
   const [searchQuery, setSearchQuery] = useState('');
   const [isLiveLoading, setIsLiveLoading] = useState(false);
+  const [showEnglishAbstract, setShowEnglishAbstract] = useState(false);
 
   // Bookmarked / Archived paper IDs
   const [archivedIds, setArchivedIds] = useState(() => {
@@ -104,7 +108,6 @@ export function PubMedCurator() {
     setStatusNotice('NCBI PubMed 실시간 데이터베이스 조회 중...');
 
     try {
-      // Randomized offset to ensure new papers every refresh
       const randomOffset = Math.floor(Math.random() * 30);
       const livePapers = await fetchLivePubMedPapers({
         topic: topicId,
@@ -114,22 +117,19 @@ export function PubMedCurator() {
       });
 
       if (livePapers && livePapers.length > 0) {
-        // Merge into papers pool
         setPapersPool(prev => {
           const existingIds = new Set(prev.map(p => p.pmid || p.id));
           const newUnique = livePapers.filter(p => !existingIds.has(p.pmid));
           return [...newUnique, ...prev];
         });
 
-        // Set first new paper as active
         setActivePaper(livePapers[0]);
-        setStatusNotice(`✨ NCBI PubMed 실시간 논문 ${livePapers.length}편이 새롭게 로드되었습니다.`);
+        setStatusNotice(`✨ NCBI PubMed 실시간 신규 논문 ${livePapers.length}편 및 한글 번역 요약이 로드되었습니다.`);
       } else {
-        // Rotate from extended database
         const matching = papersPool.filter(p => p.topic === topicId && p.id !== activePaper?.id);
         const next = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : papersPool[0];
         setActivePaper(next);
-        setStatusNotice(`✨ 엄선된 피어리뷰 논문이 로드되었습니다.`);
+        setStatusNotice(`✨ 엄선된 피어리뷰 임상 논문이 로드되었습니다.`);
       }
     } catch (err) {
       console.warn("Live fetch error, rotating local pool:", err);
@@ -170,12 +170,16 @@ export function PubMedCurator() {
     handleFetchLivePapers(selectedTopic, searchQuery.trim());
   };
 
-  // Recommended related papers
+  // Recommended related papers (separated distinct items)
   const recommendedPapers = papersPool
-    .filter(p => p.id !== activePaper?.id && (p.topic === selectedTopic || p.topic === activePaper?.topic))
+    .filter(p => (p.id || p.pmid) !== (activePaper?.id || activePaper?.pmid) && (p.topic === selectedTopic || p.topic === activePaper?.topic))
     .slice(0, 4);
 
   const isCurrentArchived = activePaper && archivedIds.includes(activePaper.id);
+
+  // Active Korean Title and Summary
+  const currentTitleKo = activePaper?.titleKo || translateMedicalTitleToKorean(activePaper?.title, activePaper?.topic || selectedTopic);
+  const currentSummaryKo = activePaper?.summaryKo || generateKoreanMedicalSummary(activePaper?.title, activePaper, activePaper?.topic || selectedTopic);
 
   return (
     <div className="pubmed-curator-container glass-card">
@@ -329,9 +333,18 @@ export function PubMedCurator() {
             </a>
           </div>
 
+          {/* Primary English Title */}
           <h3 className="paper-title mt-2.5">
             {activePaper.title}
           </h3>
+
+          {/* Korean Translated Title Box */}
+          <div className="paper-korean-title-banner mt-2">
+            <div className="flex items-start gap-2">
+              <span className="korean-badge-pill">🇰🇷 한글 제목</span>
+              <span className="korean-title-text">{currentTitleKo}</span>
+            </div>
+          </div>
 
           <div className="paper-meta-row mt-2">
             <span className="meta-journal">{activePaper.journal}</span>
@@ -352,15 +365,45 @@ export function PubMedCurator() {
             </div>
           </div>
 
-          {/* Abstract Body */}
-          <div className="paper-abstract-box mt-3">
-            <h5 className="abstract-heading">Abstract (초록):</h5>
-            <p className="abstract-text">{activePaper.abstract}</p>
+          {/* Korean Structured Research Summary */}
+          <div className="paper-korean-summary-box mt-3">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText size={15} className="text-emerald" />
+              <h5 className="summary-box-heading">한국어 임상 연구 요약 & 실천 가이드</h5>
+            </div>
+            <div className="summary-content-lines">
+              {currentSummaryKo.split('\n').map((line, idx) => (
+                <p key={idx} className="summary-line">{line}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Collapsible Original English Abstract */}
+          <div className="paper-abstract-collapsible mt-3">
+            <button 
+              type="button"
+              className="abstract-toggle-btn"
+              onClick={() => setShowEnglishAbstract(!showEnglishAbstract)}
+            >
+              <div className="flex items-center gap-1.5">
+                <Eye size={13} className="text-cyan" />
+                <span className="text-xs font-bold text-highlight">Abstract (영어 초록 원문)</span>
+              </div>
+              <span className="text-2xs text-muted">
+                {showEnglishAbstract ? '▲ 접기' : '▼ 원문 초록 펼치기'}
+              </span>
+            </button>
+
+            {showEnglishAbstract && (
+              <div className="abstract-expanded-body">
+                <p className="abstract-text">{activePaper.abstract}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* 6. Recommended Related Papers Grid */}
+      {/* 6. Recommended Related Papers Grid (Separated Distinct Cards) */}
       {recommendedPapers.length > 0 && (
         <div className="recommended-section mt-5">
           <div className="flex items-center justify-between mb-3">
@@ -368,24 +411,40 @@ export function PubMedCurator() {
               <Layers size={14} className="text-cyan" />
               <span>관련 추천 의학 논문 ({recommendedPapers.length}편)</span>
             </h5>
-            <span className="text-2xs text-muted">클릭 시 즉시 상세 분석</span>
+            <span className="text-2xs text-muted">카드 클릭 시 상단에 상세 분석</span>
           </div>
 
-          <div className="recommended-grid">
-            {recommendedPapers.map(paper => (
-              <div 
-                key={paper.id || paper.pmid}
-                className="recommended-card glass-card"
-                onClick={() => setActivePaper(paper)}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="badge badge-cyan text-3xs mono">PMID: {paper.pmid}</span>
-                  <span className="text-3xs text-muted">{paper.pubdate}</span>
+          <div className="recommended-distinct-grid">
+            {recommendedPapers.map(paper => {
+              const recTitleKo = paper.titleKo || translateMedicalTitleToKorean(paper.title, paper.topic || selectedTopic);
+              const isSelected = (paper.id || paper.pmid) === (activePaper?.id || activePaper?.pmid);
+
+              return (
+                <div 
+                  key={paper.id || paper.pmid}
+                  className={`recommended-distinct-card ${isSelected ? 'active' : ''}`}
+                  onClick={() => setActivePaper(paper)}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="badge badge-cyan text-3xs mono">PMID: {paper.pmid}</span>
+                    <span className="text-3xs text-muted">{paper.pubdate}</span>
+                  </div>
+
+                  {/* English Title */}
+                  <h6 className="rec-title-en">{paper.title}</h6>
+
+                  {/* Korean Translated Title */}
+                  <div className="rec-title-ko-box mt-1.5">
+                    <span className="badge badge-emerald text-3xs font-bold mr-1">🇰🇷</span>
+                    <span className="rec-title-ko-text">{recTitleKo}</span>
+                  </div>
+
+                  <div className="rec-journal-tag mt-2">
+                    <span>{paper.journal}</span>
+                  </div>
                 </div>
-                <h6 className="rec-title">{paper.title}</h6>
-                <div className="text-3xs text-muted mt-1">{paper.journal}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

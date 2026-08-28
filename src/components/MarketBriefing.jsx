@@ -170,7 +170,7 @@ export function MarketBriefing({ onOpenObsidianModal }) {
             {isLiveOnline ? '🟢 실시간 주식 & 환율 연동 중 (Live Feed)' : '⚠️ 실시간 피드 재시도 중'}
           </span>
           {lastUpdated && (
-            <span className="text-xs text-muted mono ml-2">
+            <span className="text-xs text-muted ml-2">
               (최근 갱신: {lastUpdated})
             </span>
           )}
