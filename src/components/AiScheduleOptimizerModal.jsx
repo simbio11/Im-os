@@ -107,7 +107,7 @@ export function AiScheduleOptimizerModal({
         {
           id: `a-${Date.now()}`,
           sender: 'assistant',
-          text: res.answer,
+          text: (res.answer || '').replace(/\*\*/g, ''),
           source: res.source
         }
       ]);

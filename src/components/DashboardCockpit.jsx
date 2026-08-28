@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CalendarDays, 
   Plus, 
@@ -23,12 +23,14 @@ import {
   FileSpreadsheet,
   Globe2,
   ArrowUpRight,
-  Wand2
+  Wand2,
+  RotateCw
 } from 'lucide-react';
 import { PUBMED_PAPERS_DB } from '../data/pubmedDatabase';
 import { KOREA_STOCKS_CORP_MAP, DART_DISCLOSURES_CACHE, DART_API_KEY } from '../services/dartService';
 import { getTodayDateStr, formatKoreanDate, formatShortKoreanDate } from '../utils/dateUtils';
 import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
+import { fetchLiveMajorIndices, fetchLiveWatchlist, DEFAULT_WATCHLIST_CONFIG } from '../utils/stockApi';
 
 export function DashboardCockpit({
   calendarEvents = [],
@@ -149,26 +151,64 @@ export function DashboardCockpit({
   const goalFat = 65;
 
   // -------------------------------------------------------------
-  // 3. Stocks, DART Intelligence & Market State
+  // 3. Stocks, DART Intelligence & Market State (Live Dynamic)
   // -------------------------------------------------------------
   const [stockViewTab, setStockViewTab] = useState('global'); // 'global' or 'dart'
+  const [isStockRefreshing, setIsStockRefreshing] = useState(false);
+  const [lastStockUpdated, setLastStockUpdated] = useState('');
 
-  const stockIndices = [
+  const [stockIndices, setStockIndices] = useState([
     { name: 'S&P 500', value: '5,892.40', change: '+1.24%', isUp: true },
     { name: 'KOSPI', value: '2,685.12', change: '-0.38%', isUp: false }
-  ];
+  ]);
 
-  const portfolioWatchlist = [
+  const [portfolioWatchlist, setPortfolioWatchlist] = useState([
     { name: 'NVDA (엔비디아)', price: '$128.45', change: '+3.15%', isUp: true },
     { name: 'AAPL (애플)', price: '$224.20', change: '+0.82%', isUp: true },
     { name: 'TSLA (테슬라)', price: '$218.10', change: '-1.45%', isUp: false },
     { name: '삼성전자', price: '76,500원', change: '+0.66%', isUp: true }
-  ];
+  ]);
+
+  const handleRefreshStocks = async () => {
+    setIsStockRefreshing(true);
+    try {
+      const savedConfig = localStorage.getItem('lm_watchlist_configs');
+      const configs = savedConfig ? JSON.parse(savedConfig) : DEFAULT_WATCHLIST_CONFIG;
+
+      const [liveIndices, liveWatchlist] = await Promise.all([
+        fetchLiveMajorIndices(),
+        fetchLiveWatchlist(configs)
+      ]);
+
+      if (liveIndices && liveIndices.length >= 2) {
+        setStockIndices([
+          liveIndices.find(idx => idx.symbol === '^GSPC') || liveIndices[0],
+          liveIndices.find(idx => idx.symbol === '^KS11') || liveIndices[4] || liveIndices[1]
+        ]);
+      }
+
+      if (liveWatchlist && liveWatchlist.length > 0) {
+        setPortfolioWatchlist(liveWatchlist.slice(0, 4));
+      }
+
+      setLastStockUpdated(new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.warn("Cockpit stock refresh err:", err);
+    } finally {
+      setIsStockRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    handleRefreshStocks();
+    const interval = setInterval(handleRefreshStocks, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const marketHeadlines = [
-    { title: '美 연준 금리 경로 시사 및 잭슨홀 미팅 매크로 안도 랠리 지속', time: '10분 전' },
-    { title: '글로벌 AI 반도체 수요 폭증 및 빅테크 CAPEX 상향 기조 유지', time: '35분 전' },
-    { title: '국내 증시 외국인 순매수 유입 및 반도체·바이오 섹터 강세 마감', time: '1시간 전' }
+    { title: '美 연준 금리 경로 시사 및 잭슨홀 미팅 매크로 안도 랠리 지속', time: '방금 전' },
+    { title: '글로벌 AI 반도체 수요 폭증 및 빅테크 CAPEX 상향 기조 유지', time: '15분 전' },
+    { title: '국내 증시 외국인 순매수 유입 및 반도체·바이오 섹터 강세 마감', time: '30분 전' }
   ];
 
   // -------------------------------------------------------------
@@ -575,6 +615,16 @@ export function DashboardCockpit({
                 <span className="mono font-bold" style={{ fontSize: '9px' }}>KR</span> DART 공시
               </button>
             </div>
+
+            {/* Refresh Button */}
+            <button 
+              className="btn btn-icon btn-xs"
+              onClick={handleRefreshStocks}
+              disabled={isStockRefreshing}
+              title={`실시간 시세 새로고침 ${lastStockUpdated ? `(마지막 갱신: ${lastStockUpdated})` : ''}`}
+            >
+              <RotateCw size={12} className={isStockRefreshing ? 'animate-spin text-cyan' : ''} />
+            </button>
 
             <button 
               className="btn btn-secondary btn-xs"

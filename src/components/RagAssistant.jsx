@@ -21,7 +21,7 @@ import {
   Flame,
   MessageSquare
 } from 'lucide-react';
-import { queryLocalAiEngine } from '../services/localAiEngine.js';
+import { queryLocalAiEngine, cleanAiText } from '../services/localAiEngine.js';
 import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '../services/geminiService.js';
 import { GeminiApiKeyModal } from './GeminiApiKeyModal.jsx';
 
@@ -38,7 +38,7 @@ export function RagAssistant({
     {
       id: 'm1',
       sender: 'assistant',
-      text: `안녕하세요! **L&M OS 최고 전략 AI 비서**입니다.\n\n사용자의 **일정 캘린더, 장전/장후 주식 브리핑, 거시경제 지표, 데일리 루틴, 5km 러닝, 식단 칼로리/단백질, 투자 가용 잉여금 및 PubMed 의학 지식**을 모두 파악하고 있습니다.\n\n궁금하신 점을 편하게 질문해보세요!`,
+      text: `안녕하세요! L&M OS 최고 전략 AI 비서입니다.\n\n사용자의 일정 캘린더, 장전/장후 주식 브리핑, 거시경제 지표, 데일리 루틴, 5km 러닝, 식단 칼로리/단백질, 투자 가용 잉여금 및 PubMed 의학 지식을 모두 파악하고 있습니다.\n\n궁금하신 점을 편하게 질문해보세요!`,
       sources: ["L&M OS Live Kernel", "Full System Context"]
     }
   ]);
@@ -83,7 +83,8 @@ export function RagAssistant({
         });
 
         const systemInstruction = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 전략가입니다.
-아래 제공된 사용자의 실시간 데이터(캘린더 일정, 루틴, 식단, 러닝, 가계부 잉여금, 거시경제 지표, PubMed 논문)를 기반으로 사용자의 질문에 군더더기 없이 간결하고 명확하며 세련된 한국어 마크다운으로 답변하세요.
+아래 제공된 사용자의 실시간 데이터를 기반으로 사용자의 질문에 군더더기 없이 간결하고 명확하게 답변하세요.
+절대로 ** (마크다운 볼드 기호)나 불필요한 특수기호를 쓰지 말고, 깔끔한 텍스트와 줄바꿈으로만 답변하세요.
 
 ${liveContext}`;
 
@@ -100,7 +101,7 @@ ${liveContext}`;
             {
               id: `a-${Date.now()}`,
               sender: 'assistant',
-              text: responseText,
+              text: cleanAiText(responseText),
               sources: ["Google Gemini 1.5 Live AI", "L&M OS Live Context"]
             }
           ]);
@@ -128,7 +129,7 @@ ${liveContext}`;
         {
           id: `a-${Date.now()}`,
           sender: 'assistant',
-          text: localResult.answer,
+          text: cleanAiText(localResult.answer),
           sources: localResult.sources
         }
       ]);
@@ -276,7 +277,6 @@ ${liveContext}`;
               if (e.key === 'Enter') handleSend();
             }}
             disabled={isLoading}
-            autoFocus
           />
           <button 
             className="rag-submit-btn"

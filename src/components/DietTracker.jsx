@@ -165,7 +165,6 @@ export function DietTracker({ dietLogs, onAddDietLog, onDeleteDietLog }) {
               placeholder="음식명 입력 (예: '닭가슴살', '밥', '제육볶음', '소고기 스테이크', '그릭요거트, 바나나')"
               value={naturalInput}
               onChange={e => handleInputChange(e.target.value)}
-              autoFocus
             />
 
             {/* 3. Gram (g) Selector Right Next to Search Input */}
