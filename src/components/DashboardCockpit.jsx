@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { PUBMED_PAPERS_DB } from '../data/pubmedDatabase';
 import { KOREA_STOCKS_CORP_MAP, DART_DISCLOSURES_CACHE, DART_API_KEY } from '../services/dartService';
-import { getTodayDateStr, formatKoreanDate, formatShortKoreanDate } from '../utils/dateUtils';
+import { getTodayDateStr, formatKoreanDate, formatShortKoreanDate, getHolidayInfo } from '../utils/dateUtils';
 import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
 import { fetchLiveMajorIndices, fetchLiveWatchlist, DEFAULT_WATCHLIST_CONFIG } from '../utils/stockApi';
 
@@ -331,13 +331,15 @@ export function DashboardCockpit({
                 const isToday = item.dateStr === todayDateStr;
                 const isSelected = item.dateStr === selectedDate;
                 const hasEvents = dayEvents.length > 0;
-                const isWeekend = idx % 7 === 0 || idx % 7 === 6; // Sunday or Saturday
+                const holiday = getHolidayInfo(item.dateStr);
+                const isWeekendOrHoliday = idx % 7 === 0 || idx % 7 === 6 || holiday.isHoliday;
 
                 return (
                   <div
                     key={idx}
                     className={`cockpit-day-tile ${item.isCurrentMonth ? 'current-month' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => setSelectedDate(item.dateStr)}
+                    title={holiday.isHoliday ? `${holiday.name}` : undefined}
                   >
                     <span 
                       className="mono"
@@ -346,12 +348,12 @@ export function DashboardCockpit({
                           ? '#fff' 
                           : isToday 
                             ? '#d8b4fe' 
-                            : isWeekend && item.isCurrentMonth
+                            : isWeekendOrHoliday && item.isCurrentMonth
                               ? 'var(--rose-primary)' 
-                              : isWeekend && !item.isCurrentMonth
+                              : isWeekendOrHoliday && !item.isCurrentMonth
                                 ? 'rgba(244, 63, 94, 0.4)'
                                 : undefined,
-                        fontWeight: isWeekend || isToday || isSelected ? 'bold' : 'normal'
+                        fontWeight: isWeekendOrHoliday || isToday || isSelected ? 'bold' : 'normal'
                       }}
                     >
                       {item.day}

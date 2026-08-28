@@ -7246,6 +7246,128 @@
   border-top: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+/* ========================================================
+   CALENDAR RED DAYS & PUBLIC HOLIDAYS STYLING
+   ======================================================== */
+.holiday-mini-pill {
+  font-size: 9px;
+  font-weight: 700;
+  color: #f43f5e;
+  background: rgba(244, 63, 94, 0.14);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+}
+
+.day-cell.is-holiday-day .day-number {
+  color: var(--rose-primary);
+  font-weight: 700;
+}
+
+.week-day-col-header.is-holiday-col .week-day-name {
+  color: var(--rose-primary);
+  font-weight: 700;
+}
+
+/* ========================================================
+   PERSONALIZED PORTFOLIO ALLOCATION MANAGER STYLES
+   ======================================================== */
+.portfolio-manager-card {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.portfolio-progress-bar-container {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  padding: 3px;
+  border: 1px solid var(--border-subtle);
+}
+
+.portfolio-stacked-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.portfolio-bar-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.portfolio-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.portfolio-asset-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.portfolio-asset-card:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(0, 240, 255, 0.3);
+  transform: translateY(-1.5px);
+}
+
+.asset-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.asset-calc-amount {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.asset-ticker-tag {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.portfolio-modal-card {
+  background: #0d1117;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(168, 85, 247, 0.15);
+  width: 100%;
+}
+
+.portfolio-draft-row {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.portfolio-color-input {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+
 
 
 

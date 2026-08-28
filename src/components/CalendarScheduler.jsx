@@ -28,7 +28,15 @@ import {
   Wand2
 } from 'lucide-react';
 import { CALENDAR_CATEGORIES } from '../data/calendarEvents';
-import { getTodayDateStr, getRelativeDateStr, formatKoreanDate, formatShortKoreanDate, isDateToday } from '../utils/dateUtils';
+import { 
+  getTodayDateStr, 
+  getRelativeDateStr, 
+  formatKoreanDate, 
+  formatShortKoreanDate, 
+  isDateToday,
+  getHolidayInfo,
+  isRedDay
+} from '../utils/dateUtils';
 import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
 
 export function CalendarScheduler({ 
@@ -432,18 +440,26 @@ export function CalendarScheduler({
                 const dayEvents = filteredEvents.filter(e => e.date === cell.dateStr);
                 const isSelected = cell.dateStr === selectedDate;
                 const isToday = isDateToday(cell.dateStr);
-                const isWeekend = idx % 7 === 0 || idx % 7 === 6;
+                const holiday = getHolidayInfo(cell.dateStr);
+                const isWeekendOrHoliday = idx % 7 === 0 || idx % 7 === 6 || holiday.isHoliday;
 
                 return (
                   <div
                     key={idx}
-                    className={`day-cell ${cell.isCurrentMonth ? '' : 'other-month'} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                    className={`day-cell ${cell.isCurrentMonth ? '' : 'other-month'} ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${isWeekendOrHoliday ? 'is-holiday-day' : ''}`}
                     onClick={() => setSelectedDate(cell.dateStr)}
                   >
                     <div className="day-cell-top">
-                      <span className={`day-number mono ${isToday ? 'today-badge' : ''} ${isWeekend && !isToday && !isSelected ? 'text-rose font-bold' : ''}`}>
-                        {cell.dayNum}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className={`day-number mono ${isToday ? 'today-badge' : ''} ${isWeekendOrHoliday && !isToday && !isSelected ? 'text-rose font-bold' : ''}`}>
+                          {cell.dayNum}
+                        </span>
+                        {holiday.isHoliday && (
+                          <span className="holiday-mini-pill" title={holiday.name}>
+                            {holiday.name}
+                          </span>
+                        )}
+                      </div>
                       {dayEvents.length > 0 && (
                         <span className="event-count-badge mono">{dayEvents.length}</span>
                       )}
@@ -610,16 +626,25 @@ export function CalendarScheduler({
         <div className="calendar-week-view glass-card mt-4">
           <div className="week-view-header">
             <div className="time-col-header">TIME</div>
-            {weekDays.map((wd, idx) => (
-              <div 
-                key={idx} 
-                className={`week-day-col-header ${wd.isSelected ? 'selected' : ''} ${wd.isToday ? 'today' : ''}`}
-                onClick={() => setSelectedDate(wd.dateStr)}
-              >
-                <span className="week-day-name">{wd.dayName}</span>
-                <span className={`week-day-num mono ${wd.isToday ? 'today-pill' : ''}`}>{wd.dayNum}</span>
-              </div>
-            ))}
+            {weekDays.map((wd, idx) => {
+              const holiday = getHolidayInfo(wd.dateStr);
+              const isWkRed = wd.dayName.includes('일') || wd.dayName.includes('토') || holiday.isHoliday;
+
+              return (
+                <div 
+                  key={idx} 
+                  className={`week-day-col-header ${wd.isSelected ? 'selected' : ''} ${wd.isToday ? 'today' : ''} ${isWkRed ? 'is-holiday-col' : ''}`}
+                  onClick={() => setSelectedDate(wd.dateStr)}
+                >
+                  <span className={`week-day-name ${isWkRed ? 'text-rose font-bold' : ''}`}>
+                    {wd.dayName} {holiday.isHoliday ? `(${holiday.name})` : ''}
+                  </span>
+                  <span className={`week-day-num mono ${wd.isToday ? 'today-pill' : (isWkRed ? 'text-rose font-bold' : '')}`}>
+                    {wd.dayNum}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="week-view-body">
