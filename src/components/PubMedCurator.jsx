@@ -182,71 +182,72 @@ export function PubMedCurator() {
   const currentSummaryKo = activePaper?.summaryKo || generateKoreanMedicalSummary(activePaper?.title, activePaper, activePaper?.topic || selectedTopic);
 
   return (
-    <div className="pubmed-curator-container glass-card">
+    <div className="pubmed-curator-container glass-card" style={{ padding: '14px 16px' }}>
       {/* 1. Header with Live Status */}
-      <div className="panel-header flex-wrap gap-3">
-        <div className="panel-title-with-icon">
-          <div className="pubmed-avatar-glow">
-            <BookOpen size={20} className="text-emerald" />
+      <div className="panel-header flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="pubmed-avatar-glow" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
+            <BookOpen size={16} className="text-emerald" />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4>PubMed 실시간 의학/바이오 논문 큐레이터</h4>
-              <span className="badge badge-emerald flex items-center gap-1">
-                <span className="pulsing-dot" /> NCBI E-utilities Live
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h4 className="text-sm font-bold text-highlight m-0">PubMed 의학/바이오 논문</h4>
+              <span className="badge badge-emerald text-2xs py-0.5 px-1.5 flex items-center gap-1">
+                <span className="pulsing-dot" /> Live
               </span>
-              <span className="badge badge-cyan mono">Peer-Reviewed</span>
             </div>
-            <p className="text-muted text-xs mt-1">
-              새로고침 시 실제 NCBI PubMed 데이터베이스에서 최신 임상/생물학 연구 논문을 실시간으로 가져옵니다.
-            </p>
           </div>
         </div>
 
-        <div className="action-buttons-row">
-          {/* Day Schedule Settings Button */}
+        <div className="action-buttons-row flex items-center gap-1.5 flex-wrap">
           <button 
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary btn-xs"
             onClick={() => setShowScheduleModal(true)}
             title="요일별 추천 분야 맞춤 설정"
           >
-            <Settings2 size={14} />
-            <span>요일별 설정</span>
+            <Settings2 size={12} />
+            <span>요일설정</span>
           </button>
 
-          {/* Refresh / Next Paper Button */}
           <button 
-            className={`btn btn-primary btn-sm ${isLiveLoading ? 'loading-spin' : ''}`}
+            className={`btn btn-primary btn-xs ${isLiveLoading ? 'loading-spin' : ''}`}
             onClick={() => handleFetchLivePapers(selectedTopic, searchQuery)}
             disabled={isLiveLoading}
             title="새로운 논문 실시간 가져오기"
           >
-            <RotateCw size={14} className={isLiveLoading ? 'animate-spin' : ''} />
-            <span>{isLiveLoading ? 'PubMed 조회 중...' : '✨ 새 논문 가져오기'}</span>
+            <RotateCw size={12} className={isLiveLoading ? 'animate-spin' : ''} />
+            <span>{isLiveLoading ? '조회 중...' : '✨ 새 논문'}</span>
           </button>
 
-          {/* Archive / Bookmark Button */}
           <button 
-            className={`btn btn-sm ${isCurrentArchived ? 'btn-emerald' : 'btn-secondary'}`}
+            className={`btn btn-xs ${isCurrentArchived ? 'btn-emerald' : 'btn-secondary'}`}
             onClick={() => activePaper && handleToggleArchive(activePaper.id)}
             title={isCurrentArchived ? "아카이브 저장됨" : "아카이브에 저장"}
           >
-            <Bookmark size={13} />
-            <span>{isCurrentArchived ? '✓ 아카이브됨' : '저장'}</span>
+            <Bookmark size={12} />
+            <span>{isCurrentArchived ? '✓ 저장됨' : '저장'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Live Topic Bar & Search Bar */}
-      <div className="pubmed-controls-row mt-3">
-        {/* Topic Filter Chips */}
-        <div className="pubmed-topic-tabs">
+      {/* 2. 1-Line Slim Horizontal Scroll Topic Chips */}
+      <div className="pubmed-controls-row mt-2.5 flex flex-col gap-2">
+        <div 
+          className="pubmed-topic-tabs flex items-center gap-1.5 overflow-x-auto pb-1"
+          style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', width: '100%' }}
+        >
           {Object.entries(PUBMED_TOPIC_QUERIES).map(([tKey, tVal]) => (
             <button
               key={tKey}
               type="button"
               className={`pubmed-topic-pill ${selectedTopic === tKey ? 'active' : ''}`}
               onClick={() => handleSelectTopic(tKey)}
+              style={{
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+                fontSize: '11px',
+                padding: '4px 11px'
+              }}
             >
               <span>{tVal.name}</span>
             </button>
@@ -254,18 +255,18 @@ export function PubMedCurator() {
         </div>
 
         {/* Live Search Form */}
-        <form className="pubmed-search-form" onSubmit={handleSearchSubmit}>
-          <div className="pubmed-search-input-box">
-            <Search size={14} className="text-muted" />
+        <form className="pubmed-search-form flex items-center gap-1.5 w-full" onSubmit={handleSearchSubmit}>
+          <div className="pubmed-search-input-box flex-1">
+            <Search size={13} className="text-muted" />
             <input
               type="text"
-              className="pubmed-search-input"
+              className="pubmed-search-input text-xs"
               placeholder="PubMed 키워드 검색 (예: Zone 2, NAD+, Autophagy, GLP-1)"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          <button type="submit" className="btn btn-secondary btn-sm" disabled={isLiveLoading || !searchQuery.trim()}>
+          <button type="submit" className="btn btn-secondary btn-xs px-3" disabled={isLiveLoading || !searchQuery.trim()}>
             검색
           </button>
         </form>
@@ -274,15 +275,15 @@ export function PubMedCurator() {
       {/* 3. Status Notification Toast */}
       {statusNotice && (
         <div className="pubmed-status-toast mt-2">
-          <Sparkles size={14} className="text-cyan" />
+          <Sparkles size={13} className="text-cyan" />
           <span className="text-xs font-semibold">{statusNotice}</span>
         </div>
       )}
 
-      {/* 4. Weekly Day Schedule Ribbon */}
-      <div className="pubmed-weekly-bar mt-3">
+      {/* 4. 1-Line Weekly Day Schedule Ribbon */}
+      <div className="pubmed-weekly-bar mt-2.5" style={{ padding: '6px 10px' }}>
         <div className="weekly-bar-label">
-          <Calendar size={13} className="text-cyan" />
+          <Calendar size={12} className="text-cyan" />
           <span className="text-2xs font-bold text-muted">요일별 분야:</span>
         </div>
         <div className="weekly-days-list">

@@ -197,38 +197,33 @@ export function DailyRoutines({
 
   return (
     <div className="daily-routines-container">
-      {/* Header Stat HUD */}
-      <div className="routine-summary-banner glass-card">
-        <div className="summary-left">
-          <div className="summary-title-row">
-            <h3>⚡ 일일 핵심 프로토콜 & 데일리 루틴</h3>
-            <span className="badge badge-cyan">{completedCount} / {totalCount} 완수 ({progressPercent}%)</span>
+      {/* Ultra Compact Header Stat HUD */}
+      <div className="routine-summary-banner glass-card" style={{ padding: '10px 14px', marginBottom: '10px' }}>
+        <div className="flex items-center justify-between flex-wrap gap-2 w-full">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-bold text-highlight flex items-center gap-1.5">
+              ⚡ <span>일일 프로토콜</span>
+            </span>
+            <span className="badge badge-cyan text-xs">
+              {completedCount}/{totalCount} 완수 ({progressPercent}%)
+            </span>
+            <span className="badge badge-purple text-xs flex items-center gap-1">
+              <Zap size={11} className="text-amber" />
+              <span>+{totalEarnedXP} XP</span>
+            </span>
           </div>
-          <p className="text-muted text-xs">
-            각 루틴 체크 시 경험치(+XP)가 실시간 적립되며 Obsidian 데일리 노트와 자동 동기화됩니다.
-          </p>
 
-          <div className="progress-bar-large">
-            <div 
-              className="progress-fill-emerald" 
-              style={{ width: `${progressPercent}%` }}
-            ></div>
-          </div>
+          <button className="btn btn-secondary btn-xs" onClick={onOpenObsidianModal}>
+            <FileText size={12} className="text-cyan" />
+            <span>Obsidian</span>
+          </button>
         </div>
 
-        <div className="summary-right">
-          <div className="xp-earned-badge">
-            <Zap size={16} className="text-amber" />
-            <div>
-              <span className="xp-val mono">+{totalEarnedXP}</span>
-              <span className="xp-lbl">오늘 획득 XP</span>
-            </div>
-          </div>
-
-          <button className="btn btn-secondary btn-sm" onClick={onOpenObsidianModal}>
-            <FileText size={14} />
-            <span>Obsidian 연동</span>
-          </button>
+        <div className="progress-bar-large mt-2" style={{ height: '5px' }}>
+          <div 
+            className="progress-fill-emerald" 
+            style={{ width: `${progressPercent}%`, height: '100%' }}
+          ></div>
         </div>
       </div>
 
@@ -290,10 +285,10 @@ export function DailyRoutines({
 
           <div className="routine-items-list">
             {safeRoutines.length === 0 ? (
-              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
-                <CheckSquare size={36} className="text-muted/50 mb-2" />
+              <div className="empty-state-card flex flex-col items-center justify-center p-4 text-center rounded-xl bg-white/5 border border-white/5 my-2">
+                <CheckSquare size={22} className="text-cyan/60 mb-1" />
                 <p className="text-muted text-xs font-medium">등록된 데일리 루틴이 없습니다.</p>
-                <p className="text-muted/60 text-2xs mt-1">상단 [+ 루틴 추가] 버튼을 눌러 하루 프로토콜을 등록해보세요.</p>
+                <p className="text-muted/60 text-2xs mt-0.5">상단 [+ 루틴 추가] 버튼을 눌러 하루 프로토콜을 등록해보세요.</p>
               </div>
             ) : (
               safeRoutines.map(routine => {
@@ -421,15 +416,14 @@ export function DailyRoutines({
           {/* Timeline Nodes or Clean Empty State */}
           <div className="timeblock-timeline">
             {timeblocks.length === 0 ? (
-              <div className="empty-state-card flex flex-col items-center justify-center p-8 text-center">
-                <Calendar size={36} className="text-muted/50 mb-2" />
+              <div className="empty-state-card flex flex-col items-center justify-center p-4 text-center rounded-xl bg-white/5 border border-white/5 my-2">
+                <Calendar size={22} className="text-purple/60 mb-1" />
                 <p className="text-muted text-xs font-medium">등록된 24h 타임블록이 없습니다.</p>
-                <p className="text-muted/60 text-2xs mt-1 mb-3">상황에 맞는 최적 하루 스케줄을 AI 추천으로 바로 완성해보세요.</p>
                 <button 
-                  className="btn btn-primary btn-sm"
+                  className="btn btn-primary btn-xs mt-2"
                   onClick={() => setIsAiModalOpen(true)}
                 >
-                  <Sparkles size={13} />
+                  <Sparkles size={12} />
                   <span>AI 추천 스케줄 둘러보기</span>
                 </button>
               </div>
