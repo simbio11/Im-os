@@ -172,8 +172,17 @@ export function App() {
     return INITIAL_CALENDAR_EVENTS;
   });
 
-  // UI Navigation & Modal States
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // UI Navigation & Modal States (Supports PWA App Shortcuts via URL search param)
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['dashboard', 'calendar', 'daily', 'expenses', 'market', 'rag', 'pubmed'].includes(tabParam)) {
+        return tabParam;
+      }
+    } catch (e) {}
+    return 'dashboard';
+  });
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [obsidianModalOpen, setObsidianModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);

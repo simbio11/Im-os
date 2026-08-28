@@ -5,14 +5,41 @@
     {
       "src": "favicon.svg",
       "type": "image/svg+xml",
-      "sizes": "192x192 512x512"
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "./",
   "background_color": "#0e0e15",
   "theme_color": "#0e0e15",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "./",
-  "description": "L&M OS - 생활 관리(Daily Protocol) & 주식·매크로 인텔리전스(Market Intelligence) 통합 운영체제"
+  "description": "L&M OS - 생활 관리(Daily Protocol) & 주식·매크로 인텔리전스(Market Intelligence) 통합 운영체제",
+  "shortcuts": [
+    {
+      "name": "오늘 캘린더 & 일정",
+      "short_name": "캘린더",
+      "description": "오늘의 일정 및 타임블록 캘린더 보기",
+      "url": "./?tab=calendar"
+    },
+    {
+      "name": "식단 & 영양 분석",
+      "short_name": "식단분석",
+      "description": "자연어 식단 칼로리 및 탄단지 기록",
+      "url": "./?tab=daily"
+    },
+    {
+      "name": "자산 잉여금 & 포트폴리오",
+      "short_name": "자산관리",
+      "description": "월간 잉여 현금흐름 및 투자 비중 배분",
+      "url": "./?tab=expenses"
+    },
+    {
+      "name": "실시간 주식 브리핑",
+      "short_name": "주식시황",
+      "description": "나스닥 및 엔비디아 실시간 시세",
+      "url": "./?tab=market"
+    }
+  ]
 }

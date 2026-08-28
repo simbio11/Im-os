@@ -44,7 +44,7 @@ export function AiScheduleOptimizerModal({
     {
       id: 'c1',
       sender: 'assistant',
-      text: '안녕하세요! **L&M OS 일정 지능형 비서**입니다.\n\n등록된 일정 요약, 비어있는 딥워크 시간 탐색, 겹치는 일정 분석 등 캘린더에 대해 무엇이든 물어보세요!',
+      text: '안녕하세요! L&M OS 일정 지능형 비서입니다.\n\n등록된 일정 요약, 비어있는 딥워크 시간 탐색, 겹치는 일정 분석 등 캘린더에 대해 무엇이든 물어보세요!',
       source: 'L&M OS Schedule Engine'
     }
   ]);
@@ -233,12 +233,12 @@ export function AiScheduleOptimizerModal({
 
             {/* Preset Prompt Chips */}
             <div className="ai-preset-chips-row">
-              <span className="text-xs text-muted font-bold">💡 빠른 AI 추천 명령:</span>
+              <span className="text-xs text-muted font-bold">💡 빠른 AI 자동 조율:</span>
               <button 
                 type="button"
                 className="chip-btn-ai"
                 onClick={() => {
-                  setPresetPrompt("오후 2시 이후 일정 30분씩 뒤로 연기해줘", targetDate);
+                  setInstruction("오후 2시 이후 일정 30분씩 뒤로 연기해줘");
                   handleRunOptimization("오후 2시 이후 일정 30분씩 뒤로 연기해줘");
                 }}
               >
@@ -248,7 +248,7 @@ export function AiScheduleOptimizerModal({
                 type="button"
                 className="chip-btn-ai"
                 onClick={() => {
-                  setPresetPrompt("겹치는 일정 충돌 해결하고 미팅 사이에 15분 휴식 버퍼 넣어줘", targetDate);
+                  setInstruction("겹치는 일정 충돌 해결하고 미팅 사이에 15분 휴식 버퍼 넣어줘");
                   handleRunOptimization("겹치는 일정 충돌 해결하고 미팅 사이에 15분 휴식 버퍼 넣어줘");
                 }}
               >
@@ -257,13 +257,10 @@ export function AiScheduleOptimizerModal({
               <button 
                 type="button"
                 className="chip-btn-ai"
-                onClick={() => setPresetPrompt(
-`내일 일정:
-9시 기상
-11시 학회
-저녁 7시에 판교로 돌아옴`, tomorrowStr)}
+                onClick={() => setInstruction("")}
+                title="입력창 비우고 새로 작성"
               >
-                📝 자연어 목록으로 스마트 일정 생성 (예시)
+                ✨ 입력창 비우고 새로 쓰기
               </button>
             </div>
 
@@ -272,7 +269,7 @@ export function AiScheduleOptimizerModal({
               <textarea
                 className="textarea-input ai-textarea"
                 rows={4}
-                placeholder="자연어로 편하게 일정을 입력하세요.&#10;예1: '내일 9시 기상, 11시 학회, 저녁 7시에 판교 복귀'&#10;예2: '오늘 오후 일정 30분씩 미뤄줘'&#10;예3: '겹치는 일정 시간 겹치지 않게 순서대로 정리해줘'"
+                placeholder="여기에 오늘 또는 내일 일정을 자유롭게 입력하세요.&#10;예: 9시 기상, 11시 학회 미팅, 오후 2시 운동, 저녁 7시 복귀"
                 value={instruction}
                 onChange={e => setInstruction(e.target.value)}
               />
