@@ -3,148 +3,241 @@ import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '
 import { getTodayDateStr, formatKoreanDate, getRelativeDateStr } from './dateUtils.js';
 
 /**
- * Parses weekday names in Korean to 0..6 (0=Sun, 1=Mon, ..., 6=Sat)
+ * Robust JSON Extractor from raw AI responses (handles markdown fences, prefixes, etc.)
  */
-const KOREAN_WEEKDAYS_MAP = {
-  '일': 0, '일요일': 0,
-  '월': 1, '월요일': 1,
-  '화': 2, '화요일': 2,
-  '수': 3, '수요일': 3,
-  '목': 4, '목요일': 4,
-  '금': 5, '금요일': 5,
-  '토': 6, '토요일': 6
-};
+export function extractJson(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null;
+  const trimmed = rawText.trim();
+  
+  // 1. Direct parse
+  try {
+    return JSON.parse(trimmed);
+  } catch (e) {}
+
+  // 2. Markdown fence ```json ... ``` or ``` ... ```
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch (e) {}
+  }
+
+  // 3. Substring between outermost { and }
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.substring(firstBrace, lastBrace + 1));
+    } catch (e) {}
+  }
+
+  return null;
+}
 
 /**
- * Generates all dates in a specific year & month matching given weekdays
+ * Parses weekday tokens in Korean to 0..6 (0=Sun, 1=Mon, ..., 6=Sat)
  */
-export function getDatesForMonthWeekdays(year, month, weekdaysArray) {
-  const dates = [];
-  const daysInMonth = new Date(year, month, 0).getDate();
+export function extractWeekdays(text) {
+  const weekdays = new Set();
+  const dayMap = {
+    '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0
+  };
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(year, month - 1, day);
-    if (weekdaysArray.includes(d.getDay())) {
-      const yStr = String(year);
-      const mStr = String(month).padStart(2, '0');
-      const dStr = String(day).padStart(2, '0');
-      dates.push(`${yStr}-${mStr}-${dStr}`);
+  // Check combinations like "월 목", "월, 목", "월/목", "월수금", "화목", "매주 월요일과 목요일"
+  for (const [char, val] of Object.entries(dayMap)) {
+    // Matches if char is followed by 요일 or standalone surrounded by separators/spaces
+    const regex = new RegExp(`(?:^|[\\s,/·~-])${char}(?:요일)?(?=[\\s,/·~-]|에|마다|일정|$)`, 'g');
+    if (regex.test(text) || text.includes(`${char}요일`) || text.includes(`${char},`) || text.includes(`${char}/`)) {
+      weekdays.add(val);
     }
+  }
+
+  // Also catch direct compact formats like "월목", "월수금", "화목토"
+  if (weekdays.size === 0) {
+    for (const [char, val] of Object.entries(dayMap)) {
+      if (text.includes(char)) {
+        weekdays.add(val);
+      }
+    }
+  }
+
+  return Array.from(weekdays);
+}
+
+/**
+ * Generates all dates in a date range matching specified weekdays
+ */
+export function getDatesBetween(startDateStr, endDateStr, weekdaysArray = []) {
+  const dates = [];
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+
+  const current = new Date(start);
+  while (current <= end) {
+    if (weekdaysArray.length === 0 || weekdaysArray.includes(current.getDay())) {
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const d = String(current.getDate()).padStart(2, '0');
+      dates.push(`${y}-${m}-${d}`);
+    }
+    current.setDate(current.getDate() + 1);
   }
   return dates;
 }
 
 /**
- * Fallback rule-based local parser for calendar events, diets, and expenses
+ * High-Precision Local Rule & NLP Engine Fallback
+ * Handles complex recurring schedules like "2027년 3월까지 매주 월 목에 서면 순회진료 일정 넣어줘"
  */
 export function parseLocalInstruction(text, todayStr = getTodayDateStr()) {
   const lower = text.toLowerCase().trim();
-  const [currentYearStr, currentMonthStr] = todayStr.split('-');
+  const [currentYearStr, currentMonthStr, currentDayStr] = todayStr.split('-');
   const currentYear = parseInt(currentYearStr, 10);
   const currentMonth = parseInt(currentMonthStr, 10);
 
-  // 1. Check for recurring monthly weekday schedule: e.g. "9월 매주 월, 목에 순회진료 일정 넣어줘"
-  const monthlyRecurringMatch = text.match(/(\d{1,2})월\s*(?:매주)?\s*([월화수목금토일,\s]+)(?:에|마다)?\s*(.*?)(?:일정\s*)?(?:넣어|추가|등록|생성)/);
-  if (monthlyRecurringMatch) {
-    const targetMonth = parseInt(monthlyRecurringMatch[1], 10);
-    const rawWeekdays = monthlyRecurringMatch[2];
-    const rawTitle = monthlyRecurringMatch[3].trim() || '순회진료';
+  // Determine if this is an action command
+  const isAddCommand = /넣어|추가|등록|생성|편성|잡아|기록/i.test(text);
+  const isDeleteCommand = /삭제|지워|제거|취소|빼줘/i.test(text);
 
-    const weekdays = [];
-    for (const [key, val] of Object.entries(KOREAN_WEEKDAYS_MAP)) {
-      if (rawWeekdays.includes(key) && !weekdays.includes(val)) {
-        weekdays.push(val);
-      }
-    }
-
-    if (weekdays.length > 0) {
-      const year = targetMonth < currentMonth ? currentYear + 1 : currentYear;
-      const targetDates = getDatesForMonthWeekdays(year, targetMonth, weekdays);
-      
-      const cleanTitle = rawTitle
-        .replace(/일정|넣어줘|등록해줘|추가해줘|잡아줘/g, '')
-        .trim() || '순회진료';
-
-      let category = 'meeting';
-      if (/진료|병원|클리닉|당직|순회/i.test(cleanTitle)) category = 'meeting';
-      else if (/딥워크|코딩|개발|연구|논문|공부/i.test(cleanTitle)) category = 'deepwork';
-      else if (/러닝|운동|헬스|피트니스/i.test(cleanTitle)) category = 'fitness';
-      else if (/주식|어닝|장전|fomc/i.test(cleanTitle)) category = 'market';
-
-      const events = targetDates.map((d, idx) => ({
-        id: `ai-rec-${Date.now()}-${idx}`,
-        date: d,
-        startTime: '09:00',
-        endTime: '12:00',
-        title: cleanTitle,
-        category,
-        location: /진료|병원|순회/.test(cleanTitle) ? '진료지 / 파견지' : '지정 장소',
-        completed: false,
-        notes: `AI 자동 편성 (매주 반복 일정)`
-      }));
-
-      return {
-        answer: `${year}년 ${targetMonth}월 매주 ${weekdays.map(w => ['일','월','화','수','목','금','토'][w]).join(', ')}요일 총 ${events.length}건의 '${cleanTitle}' 일정을 캘린더에 성공적으로 등록했습니다.`,
-        actions: [{ type: 'ADD_CALENDAR_EVENTS', events }]
-      };
-    }
+  if (isDeleteCommand) {
+    const cleanKw = text
+      .replace(/일정|삭제해줘|지워줘|제거해줘|취소해줘|빼줘|모두|전부/g, '')
+      .trim();
+    return {
+      answer: `'${cleanKw || '해당'}' 관련 일정을 캘린더에서 삭제했습니다.`,
+      actions: [{ type: 'DELETE_CALENDAR_EVENT_BY_TITLE', keyword: cleanKw }]
+    };
   }
 
-  // 2. Check for single day event additions: "내일 3시 딥워크 일정 추가", "8월 29일 오후 2시 회의"
-  if (lower.includes('추가') || lower.includes('넣어') || lower.includes('등록') || lower.includes('잡아')) {
-    let targetDate = todayStr;
-    if (lower.includes('내일')) targetDate = getRelativeDateStr(1, todayStr);
-    else if (lower.includes('모레')) targetDate = getRelativeDateStr(2, todayStr);
-    else {
-      const specificDateMatch = text.match(/(\d{1,2})월\s*(\d{1,2})일/);
-      if (specificDateMatch) {
-        const m = String(parseInt(specificDateMatch[1], 10)).padStart(2, '0');
-        const d = String(parseInt(specificDateMatch[2], 10)).padStart(2, '0');
-        targetDate = `${currentYear}-${m}-${d}`;
-      }
+  if (!isAddCommand) {
+    return null;
+  }
+
+  // 1. RECURRING SCHEDULE WITH DURATION (e.g., "2027년 3월까지 매주 월 목에 서면 순회진료 일정 넣어줘")
+  // or "9월 매주 월, 목 순회진료", "올해 말까지 매주 금요일 딥워크"
+  const untilMatch = text.match(/(?:(\d{4})년\s*)?(\d{1,2})월(?:말|까지|동안|내내)?/);
+  const isRecurring = /매주|마다|월\s*목|화\s*목|월수금|주\s*\d회/i.test(text);
+
+  if (untilMatch && isRecurring) {
+    let targetYear = untilMatch[1] ? parseInt(untilMatch[1], 10) : currentYear;
+    const targetMonth = parseInt(untilMatch[2], 10);
+
+    // If year wasn't specified and month is before current month, assume next year
+    if (!untilMatch[1] && targetMonth < currentMonth) {
+      targetYear = currentYear + 1;
     }
 
-    let startTime = '14:00';
-    let endTime = '15:30';
-    const timeMatch = text.match(/(오전|오후|저녁|아침|새벽)?\s*(\d{1,2})(?:시|:)?(\d{2})?/);
-    if (timeMatch) {
-      const isPm = timeMatch[1] === '오후' || timeMatch[1] === '저녁';
-      let hour = parseInt(timeMatch[2], 10);
-      const min = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
-      if (isPm && hour < 12) hour += 12;
-      startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-      endTime = `${String(Math.min(23, hour + 1)).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    const lastDayOfTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
+    const startDate = todayStr;
+    const endDate = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(lastDayOfTargetMonth).padStart(2, '0')}`;
+
+    // Extract weekdays
+    let weekdays = extractWeekdays(text);
+    if (weekdays.length === 0) {
+      weekdays = [1, 4]; // Default Mon, Thu if not detected
     }
 
-    const title = text
-      .replace(/내일|모레|오늘|\d{1,2}월\s*\d{1,2}일|(오전|오후|저녁|아침|새벽)?\s*\d{1,2}시(\d{2}분)?|일정|추가해줘|넣어줘|등록해줘|잡아줘/g, '')
-      .trim() || '새 일정';
+    // Extract clean title and location
+    let cleanTitle = text
+      .replace(/(?:\d{4}년\s*)?\d{1,2}월(?:말|까지|동안|내내)?/g, '')
+      .replace(/매주|마다|[월화수목금토일,\s/·~-]+(?:요일)?(?:에|마다)?/g, '')
+      .replace(/일정|넣어줘|등록해줘|추가해줘|잡아줘|편성해줘|기록해줘/g, '')
+      .trim();
 
-    let category = 'personal';
-    if (/딥워크|개발|연구|논문|코딩/i.test(title)) category = 'deepwork';
-    else if (/러닝|운동|헬스/i.test(title)) category = 'fitness';
-    else if (/회의|미팅|진료|상담/i.test(title)) category = 'meeting';
-    else if (/주식|매매|실적/i.test(title)) category = 'market';
+    if (!cleanTitle) cleanTitle = '순회진료';
 
-    const newEvent = {
-      id: `ai-evt-${Date.now()}`,
-      date: targetDate,
-      startTime,
-      endTime,
-      title,
+    // Location detection
+    let location = '지정 장소';
+    const locMatch = cleanTitle.match(/(서면|판교|강남|여의도|본원|분원|자택|연구실|병원|클리닉)/);
+    if (locMatch) {
+      location = locMatch[1];
+    } else if (/진료|순회/.test(cleanTitle)) {
+      location = '진료지 / 파견지';
+    }
+
+    // Category detection
+    let category = 'meeting';
+    if (/진료|병원|클리닉|당직|순회|외래/i.test(cleanTitle)) category = 'meeting';
+    else if (/딥워크|코딩|개발|연구|논문|공부|집중/i.test(cleanTitle)) category = 'deepwork';
+    else if (/러닝|운동|헬스|피트니스|zone/i.test(cleanTitle)) category = 'fitness';
+    else if (/주식|어닝|장전|fomc|매매/i.test(cleanTitle)) category = 'market';
+
+    const targetDates = getDatesBetween(startDate, endDate, weekdays);
+    const weekdayKorean = weekdays.map(w => ['일','월','화','수','목','금','토'][w]).join(', ');
+
+    const events = targetDates.map((d, idx) => ({
+      id: `ai-rec-${Date.now()}-${idx}`,
+      date: d,
+      startTime: '09:00',
+      endTime: '12:00',
+      title: cleanTitle,
       category,
-      location: '지정 장소',
+      location,
       completed: false,
-      notes: 'AI Copilot 자연어 자동 생성'
-    };
+      notes: `AI 지능형 자동 편성 (매주 ${weekdayKorean}요일 반복)`
+    }));
 
     return {
-      answer: `${formatKoreanDate(targetDate)} ${startTime}~${endTime} '${title}' 일정을 캘린더에 등록했습니다.`,
-      actions: [{ type: 'ADD_CALENDAR_EVENTS', events: [newEvent] }]
+      answer: `${targetYear}년 ${targetMonth}월까지 매주 ${weekdayKorean}요일에 총 ${events.length}건의 '${cleanTitle}'(${location}) 일정을 캘린더에 성공적으로 등록했습니다.`,
+      actions: [{ type: 'ADD_CALENDAR_EVENTS', events }]
     };
   }
 
-  return null;
+  // 2. SINGLE DAY OR SPECIFIC DATE SCHEDULE
+  let targetDate = todayStr;
+  if (lower.includes('내일')) targetDate = getRelativeDateStr(1, todayStr);
+  else if (lower.includes('모레')) targetDate = getRelativeDateStr(2, todayStr);
+  else if (lower.includes('글피')) targetDate = getRelativeDateStr(3, todayStr);
+  else {
+    const specificDateMatch = text.match(/(?:(\d{4})년\s*)?(\d{1,2})월\s*(\d{1,2})일/);
+    if (specificDateMatch) {
+      const y = specificDateMatch[1] ? parseInt(specificDateMatch[1], 10) : currentYear;
+      const m = String(parseInt(specificDateMatch[2], 10)).padStart(2, '0');
+      const d = String(parseInt(specificDateMatch[3], 10)).padStart(2, '0');
+      targetDate = `${y}-${m}-${d}`;
+    }
+  }
+
+  let startTime = '14:00';
+  let endTime = '15:30';
+  const timeMatch = text.match(/(오전|오후|저녁|아침|새벽)?\s*(\d{1,2})(?:시|:)?(\d{2})?/);
+  if (timeMatch) {
+    const isPm = timeMatch[1] === '오후' || timeMatch[1] === '저녁';
+    let hour = parseInt(timeMatch[2], 10);
+    const min = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+    if (isPm && hour < 12) hour += 12;
+    startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    endTime = `${String(Math.min(23, hour + 1)).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+  }
+
+  let cleanTitle = text
+    .replace(/(?:내일|모레|오늘|\d{4}년|\d{1,2}월\s*\d{1,2}일)/g, '')
+    .replace(/(오전|오후|저녁|아침|새벽)?\s*\d{1,2}시(?:\d{2}분)?/g, '')
+    .replace(/일정|추가해줘|넣어줘|등록해줘|잡아줘|편성해줘|기록해줘/g, '')
+    .trim() || '새 일정';
+
+  let category = 'personal';
+  if (/딥워크|개발|연구|논문|코딩|집중/i.test(cleanTitle)) category = 'deepwork';
+  else if (/러닝|운동|헬스|피트니스/i.test(cleanTitle)) category = 'fitness';
+  else if (/회의|미팅|진료|상담|순회|외래/i.test(cleanTitle)) category = 'meeting';
+  else if (/주식|매매|실적|어닝|fomc/i.test(cleanTitle)) category = 'market';
+
+  const newEvent = {
+    id: `ai-evt-${Date.now()}`,
+    date: targetDate,
+    startTime,
+    endTime,
+    title: cleanTitle,
+    category,
+    location: /진료|병원|순회/.test(cleanTitle) ? '진료지' : '지정 장소',
+    completed: false,
+    notes: 'AI Copilot 자연어 자동 생성'
+  };
+
+  return {
+    answer: `${formatKoreanDate(targetDate)} ${startTime}~${endTime} '${cleanTitle}' 일정을 캘린더에 등록했습니다.`,
+    actions: [{ type: 'ADD_CALENDAR_EVENTS', events: [newEvent] }]
+  };
 }
 
 /**
@@ -175,8 +268,8 @@ export async function processAiCopilotInstruction({
         userProfile
       });
 
-      const prompt = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 실행 엔진(Action Copilot)입니다.
-사용자는 당신에게 질문을 하거나, 실제로 캘린더 일정 추가/삭제/변경, 식단 추가, 가계부 지출 기록 등의 실제 명령을 내릴 수 있습니다.
+      const prompt = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 실시간 실행 엔진(Action Copilot)입니다.
+사용자는 질문을 하거나, 실제로 캘린더 일정 추가/삭제/변경, 식단 추가, 가계부 지출 기록 등의 실제 명령을 내립니다.
 
 [현재 기준 시점]:
 - 오늘 날짜: ${todayStr} (${todayFormatted})
@@ -187,27 +280,29 @@ ${systemContext}
 [사용자 명령/질문]:
 "${userInput}"
 
-[수행 지침]:
-1. 사용자의 요청이 일정 추가/수정/삭제, 식단 추가, 지출 추가 등 **데이터 변경 명령**인 경우, 실제로 캘린더에 등록할 정확한 이벤트 목록을 "actions" 배열에 포함하세요.
-   - 예: "9월 매주 월, 목에 순회진료 일정 넣어줘" -> 2026년 9월의 모든 월요일과 목요일 날짜(2026-09-03, 2026-09-07, 2026-09-10, 2026-09-14, 2026-09-17, 2026-09-21, 2026-09-24, 2026-09-28 등)를 계산하여 개별 일정 객체들로 events 배열에 모두 추가합니다.
-   - 카테고리(category)는 ["deepwork", "fitness", "market", "meeting", "personal"] 중 가장 적합한 것을 선택하세요.
-   - 기본 시간은 명시되지 않았다면 적절한 시간(예: 09:00~12:00 등)을 배정하세요.
-2. 단순 질문인 경우 actions 배열은 빈 배열 []로 두고, 군더더기 없이 명확하게 answer에 답변하세요.
-3. 절대로 마크다운 볼드(**)나 불필요한 특수문자를 남발하지 말고, 간결하고 정중하게 한국어로 답변하세요.
+[핵심 실행 규칙]:
+1. 사용자가 반복 일정(예: "2027년 3월까지 매주 월 목에 서면 순회진료 일정 넣어줘", "9월 매주 화, 금 운동 추가")을 요청하면:
+   - 시작일(오늘: ${todayStr})부터 지정된 종료일까지의 기간 동안 해당 요일에 해당하는 **모든 날짜(YYYY-MM-DD)를 빠짐없이 계산**하여 events 배열에 전부 추가하세요.
+   - 단일 일정이 아니라 기간 내 매주 해당 요일마다 1개씩 모든 이벤트 객체를 생성해야 합니다.
+   - 제목, 장소(서면 등), 카테고리(meeting, deepwork, fitness, market, personal), 시간(기본 09:00~12:00 등)을 스마트하게 입력하세요.
+2. 사용자가 삭제를 요청하면:
+   - "DELETE_CALENDAR_EVENT_BY_TITLE" 액션을 사용하세요.
+3. 단순 질문인 경우:
+   - actions 배열은 빈 배열 []로 두고, 군더더기 없이 명확하게 answer에 답변하세요.
 
-반드시 아래 JSON 스키마 형식으로만 응답하세요:
+반드시 유효한 JSON 형식으로만 응답하세요. 마크다운 코드블록이나 불필요한 설명 없이 JSON만 반환하세요:
 {
-  "answer": "사용자에게 보여줄 친절하고 명확한 한국어 안내 메시지",
+  "answer": "친절하고 명확한 한국어 작업 요약 안내 메시지 (등록된 총 건수와 기간 명시)",
   "actions": [
     {
       "type": "ADD_CALENDAR_EVENTS",
       "events": [
         {
           "date": "YYYY-MM-DD",
-          "startTime": "HH:MM",
-          "endTime": "HH:MM",
+          "startTime": "09:00",
+          "endTime": "12:00",
           "title": "일정명",
-          "category": "deepwork" | "fitness" | "market" | "meeting" | "personal",
+          "category": "meeting",
           "location": "장소",
           "notes": "메모"
         }
@@ -215,12 +310,12 @@ ${systemContext}
     },
     {
       "type": "DELETE_CALENDAR_EVENT_BY_TITLE",
-      "keyword": "삭제할 일정 검색어"
+      "keyword": "검색어"
     },
     {
       "type": "ADD_DIET_LOG",
       "log": {
-        "mealType": "breakfast" | "lunch" | "dinner" | "snack",
+        "mealType": "lunch",
         "foodName": "음식명",
         "kcal": 0,
         "protein": 0
@@ -231,7 +326,7 @@ ${systemContext}
       "expense": {
         "title": "항목명",
         "amount": 0,
-        "category": "식비" | "교통" | "쇼핑" | "기타"
+        "category": "식비"
       }
     }
   ]
@@ -239,15 +334,13 @@ ${systemContext}
 
       const rawResult = await callGeminiApi({
         prompt,
-        jsonMode: true,
         apiKey: currentKey,
         model: 'gemini-3.1-pro-preview'
       });
 
-      const parsed = JSON.parse(rawResult);
-      if (parsed && typeof parsed.answer === 'string') {
-        // Ensure actions have valid IDs
-        const sanitizedActions = (parsed.actions || []).map(action => {
+      const parsed = extractJson(rawResult);
+      if (parsed && typeof parsed.answer === 'string' && Array.isArray(parsed.actions)) {
+        const sanitizedActions = parsed.actions.map(action => {
           if (action.type === 'ADD_CALENDAR_EVENTS' && Array.isArray(action.events)) {
             return {
               ...action,
@@ -263,18 +356,21 @@ ${systemContext}
           return action;
         });
 
-        return {
-          answer: parsed.answer,
-          actions: sanitizedActions,
-          source: 'gemini'
-        };
+        // If action was executed, return it
+        if (sanitizedActions.length > 0 || parsed.answer) {
+          return {
+            answer: parsed.answer,
+            actions: sanitizedActions,
+            source: 'gemini'
+          };
+        }
       }
     } catch (err) {
       console.warn("Gemini Action Copilot processing fallback:", err);
     }
   }
 
-  // 2. High-Precision Local Rule Engine Fallback
+  // 2. High-Precision Local Rule & NLP Engine Fallback
   const localAction = parseLocalInstruction(userInput, todayStr);
   if (localAction) {
     return {
@@ -284,9 +380,9 @@ ${systemContext}
     };
   }
 
-  // 3. Fallback to normal text answering
+  // 3. Fallback General QA
   return {
-    answer: "요청하신 내용을 확인했습니다. 일정이나 데이터 변경이 필요한 경우 '9월 매주 월, 목 순회진료 추가해줘' 또는 '내일 3시 회의 추가해줘'처럼 말씀해 주시면 실제 캘린더에 즉시 등록됩니다.",
+    answer: "요청하신 내용을 확인했습니다. 일정이나 데이터 변경이 필요한 경우 '2027년 3월까지 매주 월, 목 순회진료 추가해줘' 또는 '내일 3시 회의 추가해줘'처럼 말씀해 주시면 실제 캘린더에 즉시 등록됩니다.",
     actions: [],
     source: 'fallback'
   };
