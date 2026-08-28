@@ -30,6 +30,7 @@ import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { GeminiApiKeyModal } from './components/GeminiApiKeyModal';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
+import { SettingsModal, applyThemeColor } from './components/SettingsModal';
 import { getStoredGeminiApiKey } from './services/geminiService';
 
 import { 
@@ -190,8 +191,18 @@ export function App() {
   const [levelUpModalOpen, setLevelUpModalOpen] = useState(false);
   const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
   const [geminiKeyModalOpen, setGeminiKeyModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState(() => getStoredGeminiApiKey());
   const [ragInitialQuery, setRagInitialQuery] = useState('');
+
+  // Initial Theme Initialization
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('lm_theme_color');
+    const savedGlow = localStorage.getItem('lm_theme_glow');
+    if (savedTheme && savedGlow) {
+      applyThemeColor(savedTheme, savedGlow);
+    }
+  }, []);
 
   // Sync Loop & Echo Prevention Refs
   const isRemoteUpdateRef = useRef(false);
@@ -503,6 +514,7 @@ export function App() {
         onOpenLevelModal={() => setLevelSystemModalOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenGeminiKeyModal={() => setGeminiKeyModalOpen(true)}
+        onOpenSettingsModal={() => setSettingsModalOpen(true)}
         geminiApiKey={geminiApiKey}
         currentUser={currentUser}
         isMusicPlaying={isMusicPlaying}
@@ -799,6 +811,14 @@ export function App() {
         isOpen={geminiKeyModalOpen}
         onClose={() => setGeminiKeyModalOpen(false)}
         onApiKeyUpdated={(newKey) => setGeminiApiKey(newKey)}
+      />
+
+      <SettingsModal
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        userProfile={userProfile}
+        onUpdateUserProfile={setUserProfile}
+        onClearAllCalendarEvents={() => handleBulkUpdateCalendarEvents([])}
       />
 
       {/* Mobile Bottom Navigation Bar (Shown on Mobile screens <= 768px) */}

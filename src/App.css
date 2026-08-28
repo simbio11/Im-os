@@ -7728,6 +7728,36 @@
   40% { transform: translateY(-4px); opacity: 1; }
 }
 
+/* Settings Modal & Theme Color Switcher */
+.settings-modal {
+  width: 100%;
+  max-width: 640px;
+}
+
+.modal-subtabs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+}
+
+.theme-color-card {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-color-card:hover {
+  transform: translateY(-2px);
+}
+
+.theme-color-card.border-cyan {
+  border-color: var(--cyan-primary) !important;
+  box-shadow: 0 0 15px var(--cyan-glow);
+}
+
+
 
 
 

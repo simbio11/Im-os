@@ -82,17 +82,19 @@ export function RagAssistant({
           userProfile
         });
 
-        const systemInstruction = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 전략가입니다.
-아래 제공된 사용자의 실시간 데이터를 기반으로 사용자의 질문에 군더더기 없이 간결하고 명확하게 답변하세요.
-절대로 ** (마크다운 볼드 기호)나 불필요한 특수기호를 쓰지 말고, 깔끔한 텍스트와 줄바꿈으로만 답변하세요.
+        const systemInstruction = `당신은 최고 전략 개인 OS 'L&M OS'의 수석 AI 비서이자 최고 지능 파트너(Gemini AI)입니다.
+사용자와 자유롭게 대화하며, 일반 지식, 수학 계산, 코딩, 아이디어 기획, 일정 관리, 재무 및 건강 조언 등 모든 질문에 대해 매우 똑똑하고 전문적이며 친절하게 한국어로 답변하세요.
 
+만약 질문이 사용자의 일정, 식단, 루틴, 가계부 잉여금 등 개인 데이터와 관련된 내용이라면 아래 제공된 사용자의 실시간 최신 데이터를 바탕으로 정밀하게 브리핑하고 조언하세요.
+
+[사용자 실시간 데이터]:
 ${liveContext}`;
 
         const responseText = await callGeminiApi({
           prompt: text,
           systemInstruction,
           apiKey: currentKey,
-          model: 'gemini-3.1-pro-preview'
+          model: 'gemini-2.0-flash'
         });
 
         if (responseText) {
@@ -102,7 +104,7 @@ ${liveContext}`;
               id: `a-${Date.now()}`,
               sender: 'assistant',
               text: cleanAiText(responseText),
-              sources: ["Google Gemini 1.5 Live AI", "L&M OS Live Context"]
+              sources: ["Google Gemini AI Live Intelligence", "L&M OS Live Hub"]
             }
           ]);
           setIsLoading(false);

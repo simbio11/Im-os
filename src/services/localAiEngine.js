@@ -32,6 +32,28 @@ export function queryLocalAiEngine(query, {
   const todayStr = getTodayDateStr();
   const tomorrowStr = getRelativeDateStr(1);
 
+  // 0. Arithmetic / Math Calculation Evaluation (e.g. "59곱하기 23", "59 * 23", "123 + 456")
+  const mathClean = query
+    .replace(/곱하기|x|X/g, '*')
+    .replace(/더하기/g, '+')
+    .replace(/빼기/g, '-')
+    .replace(/나누기/g, '/')
+    .replace(/는|\?|얼마야|얼마니|계산해줘/g, '')
+    .trim();
+
+  if (/^[\d\s+\-*/().%]+$/.test(mathClean) && /[\d]/.test(mathClean)) {
+    try {
+      // Safe math eval via Function
+      const mathResult = Function(`'use strict'; return (${mathClean})`)();
+      if (typeof mathResult === 'number' && !isNaN(mathResult)) {
+        return {
+          answer: `계산 결과: ${query.trim()} = ${mathResult.toLocaleString()}`,
+          sources: ["L&M Math Kernel", "Instant Arithmetic"]
+        };
+      }
+    } catch (e) {}
+  }
+
   // 1. AI Identity & Capabilities
   if (q.includes('뭘 할 수') || q.includes('누구') || q.includes('도움말') || q.includes('기능') || q.includes('소개') || q.includes('help') || q.includes('what can you do')) {
     return {

@@ -19,7 +19,8 @@ import {
   Bot,
   BookOpenCheck,
   Terminal,
-  Key
+  Key,
+  Settings
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -31,6 +32,7 @@ export function Header({
   onOpenLevelModal,
   onOpenAuthModal,
   onOpenGeminiKeyModal,
+  onOpenSettingsModal,
   geminiApiKey,
   currentUser,
   activeTab,
@@ -212,6 +214,15 @@ export function Header({
             <span className="btn-obsidian-text">
               {currentUser ? "클라우드 🟢" : "클라우드 동기화"}
             </span>
+          </button>
+
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={onOpenSettingsModal}
+            title="테마 색상 및 시스템 설정"
+          >
+            <Settings size={14} className="text-cyan" />
+            <span className="btn-obsidian-text">설정</span>
           </button>
 
           <button 
