@@ -13,10 +13,15 @@ import {
   RotateCw,
   ExternalLink,
   ChevronUp,
-  MessageSquare
+  MessageSquare,
+  CheckCircle2,
+  CalendarPlus,
+  ArrowRight
 } from 'lucide-react';
-import { queryLocalAiEngine, cleanAiText } from '../services/localAiEngine.js';
-import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '../services/geminiService.js';
+import confetti from 'canvas-confetti';
+import { cleanAiText } from '../services/localAiEngine.js';
+import { getStoredGeminiApiKey } from '../services/geminiService.js';
+import { processAiCopilotInstruction } from '../utils/aiActionEngine.js';
 
 export function FloatingAiAssistant({
   calendarEvents = [],
@@ -26,14 +31,16 @@ export function FloatingAiAssistant({
   expenses = [],
   userProfile = {},
   onNavigateTab,
-  onBulkUpdateCalendarEvents
+  onBulkUpdateCalendarEvents,
+  onAddDietLog,
+  onAddExpense
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 'm-init',
       sender: 'assistant',
-      text: '안녕하세요! L&M OS 실시간 AI Copilot입니다. 일정 질문, 시간 변경, 가용 잉여금, 식단 분석 등 무엇이든 물어보세요.'
+      text: '안녕하세요! L&M OS 실시간 AI Copilot입니다. "9월 매주 월, 목에 순회진료 일정 넣어줘", "내일 오후 3시 회의 추가해줘"처럼 말씀하시면 실제 캘린더에 바로 등록해 드립니다.'
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -47,6 +54,16 @@ export function FloatingAiAssistant({
     }
   }, [messages, isOpen, isLoading]);
 
+  const triggerConfetti = () => {
+    try {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.8, x: 0.85 }
+      });
+    } catch (e) {}
+  };
+
   const handleSend = async (queryToSend) => {
     const text = (queryToSend || inputText).trim();
     if (!text || isLoading) return;
@@ -57,53 +74,10 @@ export function FloatingAiAssistant({
     setInputText('');
     setIsLoading(true);
 
-    const currentKey = getStoredGeminiApiKey();
-
-    // 1. Try Gemini Live API if API key is present
-    if (currentKey && currentKey.trim()) {
-      try {
-        const liveContext = buildGlobalSystemContext({
-          calendarEvents,
-          routines,
-          dietLogs,
-          runningLogs,
-          expenses,
-          userProfile
-        });
-
-        const systemInstruction = `당신은 최고 전략 개인 OS 'L&M OS'의 플로팅 실시간 AI Copilot입니다.
-사용자의 실시간 데이터를 기반으로 질문에 아주 간결하고 명확하게 답변하세요.
-절대로 ** (마크다운 볼드 기호)나 불필요한 특수기호를 쓰지 말고, 2~4줄 이내로 깔끔하게 요약하여 답변하세요.
-
-${liveContext}`;
-
-        const responseText = await callGeminiApi({
-          prompt: text,
-          systemInstruction,
-          apiKey: currentKey,
-          model: 'gemini-3.1-pro-preview'
-        });
-
-        if (responseText) {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: `a-${Date.now()}`,
-              sender: 'assistant',
-              text: cleanAiText(responseText)
-            }
-          ]);
-          setIsLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.warn("Floating AI Gemini call fallback:", err);
-      }
-    }
-
-    // 2. Local AI Engine Fallback
-    setTimeout(() => {
-      const localResult = queryLocalAiEngine(text, {
+    try {
+      // Execute through Unified AI Action Engine (Gemini 3.1 Pro / Local Hybrid)
+      const result = await processAiCopilotInstruction({
+        userInput: text,
         calendarEvents,
         routines,
         dietLogs,
@@ -112,16 +86,70 @@ ${liveContext}`;
         userProfile
       });
 
+      let actionMeta = null;
+
+      // Execute actual actions if any were produced
+      if (result.actions && result.actions.length > 0) {
+        for (const act of result.actions) {
+          if (act.type === 'ADD_CALENDAR_EVENTS' && Array.isArray(act.events) && act.events.length > 0) {
+            // Merge new events into calendar
+            const updated = [...calendarEvents, ...act.events];
+            if (onBulkUpdateCalendarEvents) {
+              onBulkUpdateCalendarEvents(updated);
+            }
+            actionMeta = {
+              type: 'calendar',
+              count: act.events.length,
+              events: act.events
+            };
+            triggerConfetti();
+          } else if (act.type === 'DELETE_CALENDAR_EVENT_BY_TITLE' && act.keyword) {
+            const lowerKw = act.keyword.toLowerCase();
+            const filtered = calendarEvents.filter(e => !e.title?.toLowerCase().includes(lowerKw));
+            if (onBulkUpdateCalendarEvents) {
+              onBulkUpdateCalendarEvents(filtered);
+            }
+            actionMeta = { type: 'delete_calendar', keyword: act.keyword };
+          } else if (act.type === 'ADD_DIET_LOG' && act.log && onAddDietLog) {
+            onAddDietLog({
+              id: `diet-ai-${Date.now()}`,
+              date: new Date().toISOString().split('T')[0],
+              ...act.log
+            });
+            actionMeta = { type: 'diet' };
+          } else if (act.type === 'ADD_EXPENSE' && act.expense && onAddExpense) {
+            onAddExpense({
+              id: `exp-ai-${Date.now()}`,
+              date: new Date().toISOString().split('T')[0],
+              ...act.expense
+            });
+            actionMeta = { type: 'expense' };
+          }
+        }
+      }
+
       setMessages(prev => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           sender: 'assistant',
-          text: cleanAiText(localResult.answer)
+          text: cleanAiText(result.answer),
+          actionMeta
         }
       ]);
+    } catch (err) {
+      console.warn("AI Copilot Error:", err);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `a-${Date.now()}`,
+          sender: 'assistant',
+          text: '요청을 처리하는 도중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        }
+      ]);
+    } finally {
       setIsLoading(false);
-    }, 200);
+    }
   };
 
   return (
@@ -132,7 +160,7 @@ ${liveContext}`;
           type="button"
           className={`floating-ai-pill-btn ${isOpen ? 'active' : ''}`}
           onClick={() => setIsOpen(!isOpen)}
-          title="언제든 질문하거나 일정을 수정할 수 있는 실시간 AI 어시스턴트"
+          title="자연어로 일정을 추가하고 질문할 수 있는 실시간 AI 어시스턴트"
         >
           <div className="floating-btn-content">
             <span className="floating-live-dot" />
@@ -154,7 +182,7 @@ ${liveContext}`;
               <div>
                 <h5 className="floating-header-title">L&M AI Copilot</h5>
                 <span className="floating-status-pill">
-                  {apiKey ? '🟢 Gemini 1.5 Live' : '⚡ 지능형 내장 AI'}
+                  {apiKey ? '🟢 Gemini 3.1 Pro Live' : '⚡ 지능형 내장 AI'}
                 </span>
               </div>
             </div>
@@ -176,6 +204,13 @@ ${liveContext}`;
             <button 
               type="button"
               className="floating-quick-chip"
+              onClick={() => handleSend("9월 매주 월, 목에 순회진료 일정 넣어줘")}
+            >
+              🏥 9월 순회진료 편성
+            </button>
+            <button 
+              type="button"
+              className="floating-quick-chip"
               onClick={() => handleSend("내일 일정 브리핑해줘")}
             >
               📅 내일 일정
@@ -194,13 +229,6 @@ ${liveContext}`;
             >
               🚀 엔비디아
             </button>
-            <button 
-              type="button"
-              className="floating-quick-chip"
-              onClick={() => handleSend("오늘 먹은 칼로리와 단백질 분석해줘")}
-            >
-              🥗 식단 영양
-            </button>
           </div>
 
           {/* Messages Stream */}
@@ -211,6 +239,36 @@ ${liveContext}`;
                   {msg.text.split('\n').map((line, idx) => (
                     <p key={idx} className="floating-msg-line">{line}</p>
                   ))}
+
+                  {/* Action Confirmation & Navigation Badge */}
+                  {msg.actionMeta?.type === 'calendar' && (
+                    <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1.5">
+                      <div className="text-2xs text-emerald font-bold flex items-center gap-1">
+                        <CheckCircle2 size={12} />
+                        <span>{msg.actionMeta.count}건의 일정이 캘린더에 성공적으로 등록되었습니다.</span>
+                      </div>
+                      {onNavigateTab && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-xs inline-flex items-center gap-1 self-start mt-1 text-cyan border-cyan/30"
+                          onClick={() => {
+                            onNavigateTab('calendar');
+                          }}
+                        >
+                          <CalendarPlus size={12} />
+                          <span>캘린더에서 확인하기</span>
+                          <ArrowRight size={11} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {msg.actionMeta?.type === 'delete_calendar' && (
+                    <div className="mt-2 pt-1 border-t border-white/10 text-2xs text-amber flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      <span>'{msg.actionMeta.keyword}' 관련 일정이 삭제되었습니다.</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

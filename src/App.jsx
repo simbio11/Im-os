@@ -817,6 +817,8 @@ export function App() {
         userProfile={userProfile}
         onNavigateTab={setActiveTab}
         onBulkUpdateCalendarEvents={handleBulkUpdateCalendarEvents}
+        onAddDietLog={handleAddDietLog}
+        onAddExpense={handleAddExpense}
       />
     </div>
   );
