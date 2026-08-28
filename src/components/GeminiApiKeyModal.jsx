@@ -31,25 +31,20 @@ export function GeminiApiKeyModal({ isOpen, onClose, onApiKeyUpdated }) {
       return;
     }
 
-    if (!trimmed.startsWith('AIza')) {
-      setStatusMessage({ type: 'error', text: '유효한 Google Gemini API 키는 일반적으로 "AIza..."로 시작합니다.' });
-      return;
-    }
-
     setIsTesting(true);
     setStatusMessage(null);
 
     try {
       // Test the key with a fast ping
       await callGeminiApi({
-        prompt: 'Ping! Respond with "OK" in JSON format: {"status":"OK"}',
-        jsonMode: true,
-        apiKey: trimmed
+        prompt: 'Ping! Respond with "OK".',
+        apiKey: trimmed,
+        model: 'gemini-1.5-flash'
       });
 
       saveStoredGeminiApiKey(trimmed);
       if (onApiKeyUpdated) onApiKeyUpdated(trimmed);
-      setStatusMessage({ type: 'success', text: '✨ Gemini 1.5 Live API 키가 성공적으로 검증 및 저장되었습니다!' });
+      setStatusMessage({ type: 'success', text: '✨ Gemini API 키가 성공적으로 검증 및 활성화되었습니다!' });
       setTimeout(() => {
         onClose();
       }, 900);
@@ -58,7 +53,8 @@ export function GeminiApiKeyModal({ isOpen, onClose, onApiKeyUpdated }) {
       // Still allow saving if user wants
       saveStoredGeminiApiKey(trimmed);
       if (onApiKeyUpdated) onApiKeyUpdated(trimmed);
-      setStatusMessage({ type: 'warning', text: '키가 저장되었으나 검증 호출에 실패했습니다. 키가 올바른지 확인해주세요.' });
+      const errMsg = err?.message || '네트워크 또는 API 키 유효성 확인 필요';
+      setStatusMessage({ type: 'warning', text: `키가 저장되었으나 검증 호출 실패 (${errMsg})` });
     } finally {
       setIsTesting(false);
     }

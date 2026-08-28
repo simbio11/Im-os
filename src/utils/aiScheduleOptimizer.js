@@ -202,8 +202,8 @@ export async function optimizeScheduleWithAI({
   const date = targetDate || getTodayDateStr();
   const key = apiKey || getStoredGeminiApiKey();
 
-  // Try Gemini 1.5 Live API if Key is present
-  if (key && key.startsWith('AIza')) {
+  // Try Gemini Live API if Key is present
+  if (key && key.trim()) {
     try {
       const dayEvents = currentEvents.filter(e => e.date === date);
       const prompt = `당신은 최고 전략 개인 OS 'L&M OS'의 스케줄 총괄 AI 어시스턴트입니다.
@@ -411,7 +411,7 @@ export async function askScheduleQuestion({
   const key = apiKey || getStoredGeminiApiKey();
   const todayStr = getTodayDateStr();
 
-  if (key && key.startsWith('AIza')) {
+  if (key && key.trim()) {
     try {
       const prompt = `당신은 L&M OS의 일정 및 라이프 프로토콜 전문 지능형 AI 비서입니다.
 아래 사용자의 등록된 일정 및 루틴 데이터를 바탕으로 사용자의 질문에 군더더기 없이 간결하고 명확하게 한국어로 답변하세요.

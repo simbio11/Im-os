@@ -59,8 +59,8 @@ export function FloatingAiAssistant({
 
     const currentKey = getStoredGeminiApiKey();
 
-    // 1. Try Gemini 1.5 if API key is present
-    if (currentKey && currentKey.startsWith('AIza')) {
+    // 1. Try Gemini Live API if API key is present
+    if (currentKey && currentKey.trim()) {
       try {
         const liveContext = buildGlobalSystemContext({
           calendarEvents,

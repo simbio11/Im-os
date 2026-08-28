@@ -69,7 +69,7 @@ export async function callGeminiApi({
   model = 'gemini-1.5-flash'
 }) {
   const key = apiKey || getStoredGeminiApiKey();
-  if (!key || !key.startsWith('AIza')) {
+  if (!key || !key.trim()) {
     throw new Error('MISSING_API_KEY');
   }
 

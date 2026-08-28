@@ -71,7 +71,7 @@ export function RagAssistant({
     const currentKey = getStoredGeminiApiKey();
 
     // 2. Try Gemini Live API if key is present
-    if (currentKey && currentKey.startsWith('AIza')) {
+    if (currentKey && currentKey.trim()) {
       try {
         const liveContext = buildGlobalSystemContext({
           calendarEvents,
