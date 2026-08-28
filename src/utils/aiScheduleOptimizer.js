@@ -1,145 +1,287 @@
-// AI Schedule Auto-Optimizer & Bulk Natural Language Processing Engine for L&M OS
-import { getTodayDateStr, getRelativeDateStr, timeStrToMinutes, minutesToTimeStr } from './dateUtils';
+import { getTodayDateStr, getRelativeDateStr, formatKoreanDate, timeStrToMinutes, minutesToTimeStr } from './dateUtils.js';
+import { callGeminiApi, getStoredGeminiApiKey } from '../services/geminiService.js';
 
 /**
- * Parses freeform natural language text to extract category, times, title, and location
+ * Intelligent Korean Natural Language Schedule Parser
  */
-export function parseSingleScheduleLine(line, defaultDate = null) {
-  if (!line || typeof line !== 'string') return null;
-  const raw = line.trim().replace(/^[-*•\d.)\]]\s*/, '');
-  if (!raw || raw.length < 2) return null;
+export function parseKoreanScheduleText(rawText, defaultDate = null) {
+  if (!rawText || typeof rawText !== 'string') return [];
 
-  const date = defaultDate || getTodayDateStr();
+  const lines = rawText
+    .split(/\r?\n|,\s*(?=[0-9가-힣]+시)|;\s*|\s*그리고\s*/)
+    .map(l => l.trim())
+    .filter(Boolean);
 
-  // 1. Time extraction
-  // Pattern 1: Range "14:00 - 15:30", "14:00~16:00", "09:30부터 11:00까지", "9시부터 11시"
-  let startTime = "14:00";
-  let endTime = "15:00";
+  let currentTargetDate = defaultDate || getTodayDateStr();
 
-  const rangeMatch = raw.match(/(\d{1,2}:\d{2})\s*(?:-|~|부터|\sto\s)\s*(\d{1,2}:\d{2})/);
-  const hourRangeMatch = raw.match(/(\d{1,2})시(?:\s*(\d{1,2})분)?\s*(?:-|~|부터)\s*(\d{1,2})시(?:\s*(\d{1,2})분)?/);
-  const singleTimeMatch = raw.match(/(\d{1,2}:\d{2})/);
-  const singleHourMatch = raw.match(/(\d{1,2})시(?:\s*(\d{1,2})분)?/);
-  const durationMatch = raw.match(/(\d+(?:\.\d+)?)\s*(?:시간|분간|hr|min)/);
+  // Check if first line or context contains date reference
+  const firstLine = lines[0] || '';
+  if (firstLine.includes('내일') || firstLine.includes('tomorrow')) {
+    currentTargetDate = getRelativeDateStr(1);
+  } else if (firstLine.includes('모레')) {
+    currentTargetDate = getRelativeDateStr(2);
+  } else if (firstLine.includes('오늘') || firstLine.includes('today')) {
+    currentTargetDate = getTodayDateStr();
+  }
 
-  if (rangeMatch) {
-    startTime = rangeMatch[1].padStart(5, '0');
-    endTime = rangeMatch[2].padStart(5, '0');
-  } else if (hourRangeMatch) {
-    const startH = parseInt(hourRangeMatch[1], 10);
-    const startM = parseInt(hourRangeMatch[2] || '0', 10);
-    const endH = parseInt(hourRangeMatch[3], 10);
-    const endM = parseInt(hourRangeMatch[4] || '0', 10);
-    startTime = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-    endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-  } else if (singleTimeMatch) {
-    startTime = singleTimeMatch[1].padStart(5, '0');
-    const startMins = timeStrToMinutes(startTime);
-    let durMins = 60;
-    if (durationMatch) {
-      if (raw.includes('시간') || raw.includes('hr')) {
-        durMins = Math.round(parseFloat(durationMatch[1]) * 60);
-      } else {
-        durMins = parseInt(durationMatch[1], 10);
-      }
+  const rawParsedItems = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Filter out header/title lines (e.g. "내일 일정:", "오늘 일정:", "스케줄:", "할일 목록:")
+    if (line.match(/^(?:내일|오늘|모레|주말|이번주|다음주)?\s*(?:일정|스케줄|할일|투두|계획|task|todo)[:\s]*$/i)) {
+      if (line.includes('내일')) currentTargetDate = getRelativeDateStr(1);
+      if (line.includes('모레')) currentTargetDate = getRelativeDateStr(2);
+      if (line.includes('오늘')) currentTargetDate = getTodayDateStr();
+      continue;
     }
-    endTime = minutesToTimeStr(startMins + durMins);
-  } else if (singleHourMatch) {
-    let startH = parseInt(singleHourMatch[1], 10);
-    const startM = parseInt(singleHourMatch[2] || '0', 10);
+
+    // 1. Time extraction
+    let startMinutes = null;
+    let endMinutes = null;
+
+    // Range patterns: "14:00 - 15:30", "11시~18시", "오전 9시부터 12시까지"
+    const rangeMatch = line.match(/(?:(오전|오후|새벽|저녁|밤)\s*)?(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})분)?)\s*(?:-|~|부터|\sto\s)\s*(?:(오전|오후|새벽|저녁|밤)\s*)?(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})분)?)/);
     
-    // PM heuristic: if user says "2시 미팅" and not specified, if morning passed or context implies afternoon
-    if (raw.includes('오후') && startH < 12) {
-      startH += 12;
+    // Single time patterns: "9시 기상", "저녁 7시에 판교", "14:30 팀 미팅"
+    const singleTimeMatch = line.match(/(?:(오전|오후|새벽|저녁|밤)\s*)?(\d{1,2})(?::(\d{2})|시(?:\s*(\d{1,2})분)?)/);
+
+    if (rangeMatch) {
+      const p1 = rangeMatch[1];
+      let h1 = parseInt(rangeMatch[2], 10);
+      const m1 = parseInt(rangeMatch[3] || rangeMatch[4] || '0', 10);
+      if ((p1 === '오후' || p1 === '저녁' || p1 === '밤') && h1 < 12) h1 += 12;
+
+      const p2 = rangeMatch[5] || p1;
+      let h2 = parseInt(rangeMatch[6], 10);
+      const m2 = parseInt(rangeMatch[7] || rangeMatch[8] || '0', 10);
+      if ((p2 === '오후' || p2 === '저녁' || p2 === '밤') && h2 < 12) h2 += 12;
+
+      startMinutes = h1 * 60 + m1;
+      endMinutes = h2 * 60 + m2;
+    } else if (singleTimeMatch) {
+      const period = singleTimeMatch[1];
+      let h = parseInt(singleTimeMatch[2], 10);
+      const m = parseInt(singleTimeMatch[3] || singleTimeMatch[4] || '0', 10);
+
+      // Korean period adjustments
+      if ((period === '오후' || period === '저녁' || period === '밤') && h < 12) {
+        h += 12;
+      } else if (!period) {
+        // Heuristic: "7시" with "저녁" in line
+        if ((line.includes('저녁') || line.includes('퇴근') || line.includes('돌아옴') || line.includes('복귀') || line.includes('밤')) && h < 12) {
+          h += 12;
+        } else if (h >= 1 && h <= 6 && !line.includes('새벽') && !line.includes('기상')) {
+          // 1~6 with no morning indicator is usually afternoon (e.g. 2시 미팅 = 14:00)
+          h += 12;
+        }
+      }
+      startMinutes = h * 60 + m;
     }
-    startTime = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-    const startMins = timeStrToMinutes(startTime);
-    let durMins = 60;
-    if (durationMatch) {
-      if (raw.includes('시간') || raw.includes('hr')) {
-        durMins = Math.round(parseFloat(durationMatch[1]) * 60);
-      } else {
-        durMins = parseInt(durationMatch[1], 10);
+
+    if (startMinutes === null) {
+      // Default to 14:00 if no time could be detected
+      startMinutes = 14 * 60;
+    }
+
+    // 2. Clean Title & Context Extraction
+    let title = line
+      .replace(/^\s*(?:\d+[\.\)]|[-*•])\s*/, '') // Remove list bullets like "1. ", "2) ", "- "
+      .replace(/(?:오전|오후|새벽|저녁|밤)?\s*\d{1,2}(?::\d{2}|시(?:\s*\d{1,2}분)?)(?:\s*(?:-|~|부터|\sto\s)\s*(?:오전|오후|새벽|저녁|밤)?\s*\d{1,2}(?::\d{2}|시(?:\s*\d{1,2}분)?))?(?:에|까지|부터)?/g, '')
+      .replace(/^(?:일정|스케줄|등록|추가|할일|투두|task|todo)[:\s]*/i, '')
+      .trim();
+
+    if (!title) {
+      title = line.replace(/^\s*(?:\d+[\.\)]|[-*•])\s*/, '').trim();
+    }
+    
+    // Polish common short phrases
+    if (title === '기상') title = '기상 및 아침 루틴';
+    if (title === '학회') title = '학회 참석 및 네트워킹';
+    if (title.includes('판교로 돌아옴') || title.includes('판교 복귀')) title = '판교 복귀 및 이동';
+
+    // 3. Category & Location Detection
+    let category = 'personal';
+    let location = '홈 오피스';
+    let defaultDurationMinutes = 60;
+
+    const lower = line.toLowerCase();
+
+    if (lower.includes('학회') || lower.includes('컨퍼런스') || lower.includes('세미나') || lower.includes('심포지엄') || lower.includes('워크샵')) {
+      category = 'meeting';
+      location = '학회장 / 컨퍼런스 홀';
+      defaultDurationMinutes = 360; // 6 hours
+    } else if (lower.includes('기상') || lower.includes('아침 루틴') || lower.includes('스트레칭') || lower.includes('기상후')) {
+      category = 'personal';
+      location = '자택';
+      defaultDurationMinutes = 60;
+    } else if (lower.includes('돌아옴') || lower.includes('복귀') || lower.includes('귀가') || lower.includes('이동') || lower.includes('출근') || lower.includes('퇴근')) {
+      category = 'personal';
+      location = lower.includes('판교') ? '판교' : '이동 중';
+      defaultDurationMinutes = 60;
+    } else if (lower.includes('러닝') || lower.includes('운동') || lower.includes('헬스') || lower.includes('5km') || lower.includes('조깅')) {
+      category = 'fitness';
+      location = '한강 러닝 트랙';
+      defaultDurationMinutes = 60;
+    } else if (lower.includes('미팅') || lower.includes('회의') || lower.includes('싱크') || lower.includes('통화') || lower.includes('인터뷰')) {
+      category = 'meeting';
+      location = lower.includes('zoom') || lower.includes('meet') ? 'Google Meet / Zoom' : '오피스 회의실';
+      defaultDurationMinutes = 60;
+    } else if (lower.includes('주식') || lower.includes('어닝콜') || lower.includes('fomc') || lower.includes('실적') || lower.includes('ir') || lower.includes('포트폴리오')) {
+      category = 'market';
+      location = 'L&M OS';
+      defaultDurationMinutes = 60;
+    } else if (lower.includes('딥워크') || lower.includes('개발') || lower.includes('코딩') || lower.includes('연구') || lower.includes('논문') || lower.includes('집중')) {
+      category = 'deepwork';
+      location = '홈 오피스';
+      defaultDurationMinutes = 90;
+    }
+
+    rawParsedItems.push({
+      startMinutes,
+      endMinutes: endMinutes || (startMinutes + defaultDurationMinutes),
+      title,
+      category,
+      location,
+      date: currentTargetDate
+    });
+  }
+
+  // 4. Sequential Time Alignment (Resolve EndTimes across items)
+  rawParsedItems.sort((a, b) => a.startMinutes - b.startMinutes);
+
+  const finalEvents = rawParsedItems.map((item, idx) => {
+    let finalEndMin = item.endMinutes;
+    const nextItem = rawParsedItems[idx + 1];
+
+    if (nextItem && nextItem.date === item.date) {
+      if (finalEndMin > nextItem.startMinutes) {
+        finalEndMin = Math.max(item.startMinutes + 30, nextItem.startMinutes - 15);
       }
     }
-    endTime = minutesToTimeStr(startMins + durMins);
-  }
 
-  // 2. Category Detection
-  let category = 'deepwork';
-  const lower = raw.toLowerCase();
+    // Bound to 23:59
+    finalEndMin = Math.min(1439, finalEndMin);
 
-  if (lower.includes('러닝') || lower.includes('운동') || lower.includes('헬스') || lower.includes('피트니스') || lower.includes('스트레칭') || lower.includes('5km') || lower.includes('조깅')) {
-    category = 'fitness';
-  } else if (lower.includes('미팅') || lower.includes('회의') || lower.includes('인터뷰') || lower.includes('싱크') || lower.includes('통화') || lower.includes('클라이언트') || lower.includes('세미나')) {
-    category = 'meeting';
-  } else if (lower.includes('주식') || lower.includes('어닝콜') || lower.includes('fomc') || lower.includes('브리핑') || lower.includes('매크로') || lower.includes('실적') || lower.includes('ir') || lower.includes('투자')) {
-    category = 'market';
-  } else if (lower.includes('식사') || lower.includes('점심') || lower.includes('저녁') || lower.includes('독서') || lower.includes('휴식') || lower.includes('약속') || lower.includes('개인') || lower.includes('병원')) {
-    category = 'personal';
-  } else {
-    category = 'deepwork';
-  }
+    return {
+      id: `evt-ai-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+      date: item.date,
+      startTime: minutesToTimeStr(item.startMinutes),
+      endTime: minutesToTimeStr(finalEndMin),
+      title: item.title,
+      category: item.category,
+      completed: false,
+      location: item.location,
+      notes: `✨ AI 지능형 자연어 스케줄러 생성 (${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })})`
+    };
+  });
 
-  // 3. Location Detection
-  let location = '홈 오피스';
-  if (lower.includes('zoom') || lower.includes('meet') || lower.includes('온라인') || lower.includes('디스코드')) {
-    location = 'Google Meet / Zoom';
-  } else if (lower.includes('한강') || lower.includes('트랙') || lower.includes('공원') || lower.includes('헬스장')) {
-    location = '한강 러닝 트랙';
-  } else if (lower.includes('카페') || lower.includes('스타벅스')) {
-    location = '카페';
-  } else if (lower.includes('사무실') || lower.includes('회사') || lower.includes('회의실')) {
-    location = '오피스 회의실';
-  }
-
-  // Clean Title
-  let title = raw
-    .replace(/(?:오전|오후)?\s*\d{1,2}(?::\d{2}|시(?:\s*\d{1,2}분)?)(?:\s*(?:-|~|부터|\sto\s)\s*(?:오전|오후)?\s*\d{1,2}(?::\d{2}|시(?:\s*\d{1,2}분)?))?/g, '')
-    .replace(/\d+(?:\.\d+)?\s*(?:시간|분간|hr|min)/g, '')
-    .replace(/^(?:일정|스케줄|등록|추가|할일|투두|task|todo)[:\s]*/i, '')
-    .trim();
-
-  if (!title) title = raw;
-
-  return {
-    id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    date,
-    startTime,
-    endTime,
-    title,
-    category,
-    completed: false,
-    location,
-    notes: `AI 자동 스케줄링 생성 (${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })})`
-  };
+  return finalEvents;
 }
 
 /**
- * Intelligent Local Rule Parser for Time Shifting, Delays, & Conflict Optimization
+ * Parse a single schedule line for quick command palette or inline inputs
  */
-export function executeLocalScheduleOptimization(instruction, currentEvents, targetDate = null) {
+export function parseSingleScheduleLine(line, defaultDate = null) {
+  const events = parseKoreanScheduleText(line, defaultDate);
+  return events && events.length > 0 ? events[0] : null;
+}
+
+/**
+ * Main AI Schedule Optimization Controller (Gemini 1.5 Live AI + High-Precision Local Fallback)
+ */
+export async function optimizeScheduleWithAI({ 
+  userInstruction, 
+  currentEvents = [], 
+  targetDate = null, 
+  apiKey = null 
+}) {
   const date = targetDate || getTodayDateStr();
-  const lower = instruction.toLowerCase().trim();
+  const key = apiKey || getStoredGeminiApiKey();
 
-  // Scenario 1: Time Shift / Delay (e.g. "30분 뒤로 미뤄줘", "1시간 연기해줘", "1시간 앞당겨줘")
-  if (lower.includes('미뤄') || lower.includes('연기') || lower.includes('뒤로') || lower.includes('앞당겨') || lower.includes('shift') || lower.includes('delay')) {
+  // Try Gemini 1.5 Live API if Key is present
+  if (key && key.startsWith('AIza')) {
+    try {
+      const dayEvents = currentEvents.filter(e => e.date === date);
+      const prompt = `당신은 최고 전략 개인 OS 'L&M OS'의 스케줄 총괄 AI 어시스턴트입니다.
+사용자의 자연어 일정 입력을 맥락에 맞게 정확히 해석하여 일정 목록을 JSON으로 반환하세요.
+
+[기준 날짜]: ${date}
+[현재 등록된 일정]:
+${JSON.stringify(dayEvents, null, 2)}
+
+[사용자 입력]:
+"${userInstruction}"
+
+[해석 및 변환 규칙]:
+1. "9시 기상", "11시 학회", "저녁 7시에 판교로 돌아옴"과 같은 비정형 텍스트를 정확한 24시간 형식(HH:MM) 시작/종료 시간으로 변환하세요.
+   - 예: 9시 기상 -> 09:00~10:00 (기상 및 아침 루틴, 카테고리: personal, 장소: 자택)
+   - 예: 11시 학회 -> 11:00~18:00 (학회 참석, 카테고리: meeting, 장소: 학회장)
+   - 예: 저녁 7시 판교 복귀 -> 19:00~20:00 (판교 복귀 및 귀가, 카테고리: personal, 장소: 판교)
+2. "30분 뒤로 미뤄줘", "1시간 연기해줘" 등의 요청은 기존 일정의 시작/종료 시간을 계산하여 조정하세요.
+3. 카테고리는 반드시 ["deepwork", "fitness", "market", "meeting", "personal"] 중 하나여야 합니다.
+
+[반환 JSON 규격]:
+{
+  "summary": "한국어 작업 요약 (예: '내일 기상, 학회, 판교 복귀 일정이 3건 성공적으로 편성되었습니다.')",
+  "actionType": "create_bulk" | "shift" | "resolve_conflicts",
+  "updatedOrNewEvents": [
+    {
+      "id": "기존 ID 유지 또는 새 ID",
+      "date": "${date}",
+      "startTime": "HH:MM",
+      "endTime": "HH:MM",
+      "title": "일정 제목",
+      "category": "deepwork" | "fitness" | "market" | "meeting" | "personal",
+      "completed": false,
+      "location": "장소",
+      "notes": "메모"
+    }
+  ]
+}`;
+
+      const rawJson = await callGeminiApi({
+        prompt,
+        jsonMode: true,
+        apiKey: key,
+        model: 'gemini-1.5-flash'
+      });
+
+      const parsed = JSON.parse(rawJson);
+      if (parsed.updatedOrNewEvents && Array.isArray(parsed.updatedOrNewEvents)) {
+        const otherEvents = currentEvents.filter(e => e.date !== date);
+        const merged = [...otherEvents, ...parsed.updatedOrNewEvents];
+        return {
+          success: true,
+          actionType: parsed.actionType || 'gemini_ai',
+          summary: `✨ [Gemini 1.5 Live AI] ${parsed.summary}`,
+          targetDate: date,
+          allEvents: merged,
+          modifiedEvents: parsed.updatedOrNewEvents.filter(e => currentEvents.some(ce => ce.id === e.id)),
+          newEvents: parsed.updatedOrNewEvents.filter(e => !currentEvents.some(ce => ce.id === e.id))
+        };
+      }
+    } catch (err) {
+      console.warn("Gemini Live AI call failed, switching to high-precision local parser:", err);
+    }
+  }
+
+  // High-Precision Local Rule & NLP Engine Fallback
+  const lower = userInstruction.toLowerCase().trim();
+
+  // Time Shifting / Delay
+  if (lower.includes('미뤄') || lower.includes('연기') || lower.includes('뒤로') || lower.includes('앞당겨')) {
     let offsetMinutes = 30;
-    const minMatch = instruction.match(/(\d+)\s*분/);
-    const hourMatch = instruction.match(/(\d+(?:\.\d+)?)\s*시간/);
+    const minMatch = userInstruction.match(/(\d+)\s*분/);
+    const hourMatch = userInstruction.match(/(\d+(?:\.\d+)?)\s*시간/);
+    if (hourMatch) offsetMinutes = Math.round(parseFloat(hourMatch[1]) * 60);
+    else if (minMatch) offsetMinutes = parseInt(minMatch[1], 10);
 
-    if (hourMatch) {
-      offsetMinutes = Math.round(parseFloat(hourMatch[1]) * 60);
-    } else if (minMatch) {
-      offsetMinutes = parseInt(minMatch[1], 10);
-    }
+    if (lower.includes('앞당겨') || lower.includes('일찍')) offsetMinutes = -offsetMinutes;
 
-    if (lower.includes('앞당겨') || lower.includes('일찍')) {
-      offsetMinutes = -offsetMinutes;
-    }
-
-    // Check if filtering from specific hour (e.g. "14시 이후", "오후 일정만")
-    const afterHourMatch = instruction.match(/(\d{1,2})시\s*이후/);
+    const afterHourMatch = userInstruction.match(/(\d{1,2})시\s*이후/);
     const afterMinutes = afterHourMatch ? parseInt(afterHourMatch[1], 10) * 60 : (lower.includes('오후') ? 720 : 0);
 
     const updatedEvents = [];
@@ -154,7 +296,6 @@ export function executeLocalScheduleOptimization(instruction, currentEvents, tar
         if (startM >= afterMinutes) {
           const newStartM = Math.max(0, Math.min(1439, startM + offsetMinutes));
           const newEndM = Math.max(0, Math.min(1439, newStartM + duration));
-
           const updated = {
             ...evt,
             startTime: minutesToTimeStr(newStartM),
@@ -174,7 +315,7 @@ export function executeLocalScheduleOptimization(instruction, currentEvents, tar
     return {
       success: true,
       actionType: 'shift',
-      summary: `${formatDateOnly(date)} 일정이 ${offsetMinutes > 0 ? '+' : ''}${offsetMinutes}분씩 자동 조정되었습니다. (총 ${modifiedList.length}건 수정)`,
+      summary: `일정이 ${offsetMinutes > 0 ? '+' : ''}${offsetMinutes}분씩 자동 조정되었습니다. (${modifiedList.length}건 수정)`,
       targetDate: date,
       allEvents: updatedEvents,
       modifiedEvents: modifiedList,
@@ -182,29 +323,15 @@ export function executeLocalScheduleOptimization(instruction, currentEvents, tar
     };
   }
 
-  // Scenario 2: Conflict Resolution & Auto-Spacing (e.g. "겹치는 일정 정리", "충돌 해결")
-  if (lower.includes('충돌') || lower.includes('겹치') || lower.includes('정리') || lower.includes('최적화') || lower.includes('conflict')) {
+  // Conflict Resolution
+  if (lower.includes('충돌') || lower.includes('겹치') || lower.includes('버퍼') || lower.includes('정리')) {
     const dayEvents = currentEvents.filter(e => e.date === date);
     const otherEvents = currentEvents.filter(e => e.date !== date);
-
-    if (dayEvents.length <= 1) {
-      return {
-        success: true,
-        actionType: 'none',
-        summary: `${formatDateOnly(date)}에는 충돌하는 일정이 없습니다.`,
-        targetDate: date,
-        allEvents: currentEvents,
-        modifiedEvents: [],
-        newEvents: []
-      };
-    }
-
-    // Sort by startTime
     dayEvents.sort((a, b) => timeStrToMinutes(a.startTime) - timeStrToMinutes(b.startTime));
 
-    let currentCursor = timeStrToMinutes(dayEvents[0].startTime);
-    const resolvedDayEvents = [];
-    const modifiedList = [];
+    let cursor = timeStrToMinutes(dayEvents[0]?.startTime || '09:00');
+    const resolved = [];
+    const modified = [];
 
     dayEvents.forEach((evt, idx) => {
       const startM = timeStrToMinutes(evt.startTime);
@@ -212,25 +339,24 @@ export function executeLocalScheduleOptimization(instruction, currentEvents, tar
       const duration = Math.max(30, endM - startM);
 
       if (idx === 0) {
-        resolvedDayEvents.push(evt);
-        currentCursor = endM + 15; // 15 min buffer
+        resolved.push(evt);
+        cursor = endM + 15;
       } else {
-        if (startM < currentCursor) {
-          // Conflict detected! Re-align
-          const newStartM = currentCursor;
+        if (startM < cursor) {
+          const newStartM = cursor;
           const newEndM = Math.min(1439, newStartM + duration);
-          const updated = {
+          const up = {
             ...evt,
             startTime: minutesToTimeStr(newStartM),
             endTime: minutesToTimeStr(newEndM),
-            notes: `${evt.notes || ''} [AI 충돌 방지: 15분 버퍼 재배치]`
+            notes: `${evt.notes || ''} [15분 버퍼 재배치]`
           };
-          resolvedDayEvents.push(updated);
-          modifiedList.push(updated);
-          currentCursor = newEndM + 15;
+          resolved.push(up);
+          modified.push(up);
+          cursor = newEndM + 15;
         } else {
-          resolvedDayEvents.push(evt);
-          currentCursor = Math.max(currentCursor, endM + 15);
+          resolved.push(evt);
+          cursor = Math.max(cursor, endM + 15);
         }
       }
     });
@@ -238,179 +364,118 @@ export function executeLocalScheduleOptimization(instruction, currentEvents, tar
     return {
       success: true,
       actionType: 'resolve_conflicts',
-      summary: `충돌 및 겹치는 시간대를 감지하여 15분 휴식 버퍼를 포함해 순차적으로 최적화했습니다. (${modifiedList.length}건 조정)`,
+      summary: `충돌 일정을 감지하여 15분 버퍼를 포함해 순차적으로 최적화했습니다. (${modified.length}건 재배치)`,
       targetDate: date,
-      allEvents: [...otherEvents, ...resolvedDayEvents],
-      modifiedEvents: modifiedList,
+      allEvents: [...otherEvents, ...resolved],
+      modifiedEvents: modified,
       newEvents: []
     };
   }
 
-  // Scenario 3: Bulk Creation from Multi-line or Natural Text
-  const lines = instruction.split(/[\n,;]| 그리고 |\s*또는\s*/).map(s => s.trim()).filter(Boolean);
-  const createdEvents = [];
+  // NLP Schedule Parsing
+  const parsedEvents = parseKoreanScheduleText(userInstruction, date);
 
-  for (const line of lines) {
-    // Check if line mentions target date (e.g. "내일", "모레", "8/29", "8월 30일")
-    let lineDate = date;
-    if (line.includes('내일') || line.includes('tomorrow')) {
-      lineDate = getRelativeDateStr(1);
-    } else if (line.includes('모레')) {
-      lineDate = getRelativeDateStr(2);
-    } else if (line.includes('오늘') || line.includes('today')) {
-      lineDate = getTodayDateStr();
-    } else {
-      const specificDateMatch = line.match(/(\d{1,2})월\s*(\d{1,2})일/) || line.match(/(\d{1,2})\/(\d{1,2})/);
-      if (specificDateMatch) {
-        const m = specificDateMatch[1].padStart(2, '0');
-        const d = specificDateMatch[2].padStart(2, '0');
-        lineDate = `${new Date().getFullYear()}-${m}-${d}`;
-      }
-    }
-
-    const parsed = parseSingleScheduleLine(line, lineDate);
-    if (parsed) {
-      createdEvents.push(parsed);
-    }
-  }
-
-  if (createdEvents.length > 0) {
+  if (parsedEvents.length > 0) {
     return {
       success: true,
       actionType: 'create_bulk',
-      summary: `AI가 자연어를 분석하여 총 ${createdEvents.length}건의 일정을 성공적으로 생성했습니다.`,
+      summary: `AI가 자연어를 분석하여 총 ${parsedEvents.length}건의 일정을 성공적으로 편성했습니다.`,
       targetDate: date,
-      allEvents: [...currentEvents, ...createdEvents],
+      allEvents: [...currentEvents, ...parsedEvents],
       modifiedEvents: [],
-      newEvents: createdEvents
+      newEvents: parsedEvents
     };
   }
 
-  // Fallback Template Generation
-  const defaultRoutine = [
-    {
-      id: `evt-gen-${Date.now()}-1`,
-      date,
-      startTime: "09:30",
-      endTime: "11:00",
-      title: "🧠 1차 딥워크: 핵심 엔지니어링 및 아키텍처 집중",
-      category: "deepwork",
-      completed: false,
-      location: "홈 오피스",
-      notes: "40Hz 감마 바이노럴 비트 몰입"
-    },
-    {
-      id: `evt-gen-${Date.now()}-2`,
-      date,
-      startTime: "14:00",
-      endTime: "15:30",
-      title: "📊 테크 포트폴리오 리밸런싱 및 투자 잉여금 점검",
-      category: "market",
-      completed: false,
-      location: "L&M OS",
-      notes: "NVDA/QQQ 분할 매수 점검"
-    },
-    {
-      id: `evt-gen-${Date.now()}-3`,
-      date,
-      startTime: "17:30",
-      endTime: "18:15",
-      title: "🏃 5km Zone 2 모닝/이브닝 러닝 세션",
-      category: "fitness",
-      completed: false,
-      location: "트랙",
-      notes: "페이스 5'15\" 목표"
-    }
-  ];
-
   return {
-    success: true,
-    actionType: 'template',
-    summary: `표준 고효율 일일 프로토콜 스케줄 3건이 생성되었습니다.`,
+    success: false,
+    actionType: 'none',
+    summary: '일정 정보를 파싱할 수 없습니다. 시간과 내용을 포함하여 다시 입력해주세요.',
     targetDate: date,
-    allEvents: [...currentEvents, ...defaultRoutine],
+    allEvents: currentEvents,
     modifiedEvents: [],
-    newEvents: defaultRoutine
+    newEvents: []
   };
 }
 
 /**
- * Main AI Schedule Optimization Controller (Supports Gemini 1.5 Live API or Local Intelligent Fallback)
+ * Schedule Chat & Q&A Assistant (Ask anything about schedules)
  */
-export async function optimizeScheduleWithAI({ userInstruction, currentEvents = [], targetDate = null, apiKey = null }) {
-  const date = targetDate || getTodayDateStr();
+export async function askScheduleQuestion({ 
+  question, 
+  calendarEvents = [], 
+  routines = [], 
+  apiKey = null 
+}) {
+  const key = apiKey || getStoredGeminiApiKey();
+  const todayStr = getTodayDateStr();
 
-  if (apiKey && apiKey.startsWith('AIza')) {
+  if (key && key.startsWith('AIza')) {
     try {
-      const dayEvents = currentEvents.filter(e => e.date === date);
-      const prompt = `당신은 개인 최고 전략 OS "L&M OS"의 지능형 일정 최적화 AI입니다.
-사용자의 요청에 따라 캘린더 일정을 추가, 수정, 시간 시프트, 또는 충돌 해결하여 유효한 JSON 형식으로만 반환하세요.
+      const prompt = `당신은 L&M OS의 일정 및 라이프 프로토콜 전문 지능형 AI 비서입니다.
+아래 사용자의 등록된 일정 및 루틴 데이터를 바탕으로 질문에 친절하고 정확하게 한국어로 답변하세요.
 
-[현재 날짜]: ${date}
-[현재 등록된 일정]:
-${JSON.stringify(dayEvents, null, 2)}
+[현재 날짜]: ${todayStr} (${formatKoreanDate(todayStr)})
+[사용자 등록 일정 목록 (총 ${calendarEvents.length}건)]:
+${calendarEvents.map(e => `• [${e.date}] ${e.startTime}~${e.endTime} | ${e.title} (${e.category}, ${e.location}) [${e.completed ? '완수' : '미완수'}]`).join('\n')}
 
-[사용자 요청]:
-"${userInstruction}"
+[데일리 루틴]:
+${routines.map(r => `• ${r.title} (${r.completed ? '완료' : '진행전'})`).join('\n')}
 
-[응답 규칙]:
-반드시 아래와 같은 순수 JSON 형식만 반환하세요 (마크다운 백틱 제외):
-{
-  "summary": "한국어로 수행한 작업 요약 (예: 2개 일정이 30분씩 뒤로 이동되었고 1개 새 일정이 추가되었습니다)",
-  "actionType": "shift" | "create_bulk" | "resolve_conflicts" | "template",
-  "updatedOrNewEvents": [
-    {
-      "id": "기존 ID 유지 또는 새 ID",
-      "date": "YYYY-MM-DD",
-      "startTime": "HH:MM",
-      "endTime": "HH:MM",
-      "title": "일정 제목",
-      "category": "deepwork" | "fitness" | "market" | "meeting" | "personal",
-      "completed": false,
-      "location": "장소",
-      "notes": "메모"
-    }
-  ]
-}`;
+[질문]:
+${question}`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
+      const answer = await callGeminiApi({
+        prompt,
+        apiKey: key,
+        model: 'gemini-1.5-flash'
       });
 
-      const data = await res.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (rawText) {
-        const parsedJson = JSON.parse(rawText);
-        if (parsedJson.updatedOrNewEvents && Array.isArray(parsedJson.updatedOrNewEvents)) {
-          // Merge with other date events
-          const otherEvents = currentEvents.filter(e => e.date !== date);
-          const mergedAll = [...otherEvents, ...parsedJson.updatedOrNewEvents];
-          return {
-            success: true,
-            actionType: parsedJson.actionType || 'gemini_ai',
-            summary: `✨ [Gemini Live AI] ${parsedJson.summary}`,
-            targetDate: date,
-            allEvents: mergedAll,
-            modifiedEvents: parsedJson.updatedOrNewEvents.filter(e => currentEvents.some(ce => ce.id === e.id)),
-            newEvents: parsedJson.updatedOrNewEvents.filter(e => !currentEvents.some(ce => ce.id === e.id))
-          };
-        }
-      }
+      return {
+        answer,
+        source: 'Gemini 1.5 Live AI'
+      };
     } catch (err) {
-      console.warn("Gemini schedule optimization failed, using local AI engine:", err);
+      console.warn("Schedule QA Gemini call error:", err);
     }
   }
 
-  // Local AI Fallback Engine
-  return executeLocalScheduleOptimization(userInstruction, currentEvents, date);
-}
+  // Local Offline Smart QA Generator
+  const lower = question.toLowerCase();
+  const todayEvents = calendarEvents.filter(e => e.date === todayStr);
+  const tomorrowEvents = calendarEvents.filter(e => e.date === getRelativeDateStr(1));
 
-function formatDateOnly(dateStr) {
-  return dateStr;
+  if (lower.includes('내일') || lower.includes('tomorrow')) {
+    if (tomorrowEvents.length === 0) {
+      return {
+        answer: `내일(${getRelativeDateStr(1)})에 등록된 일정이 없습니다. AI 일정 편집기를 통해 일정을 자유롭게 추가해보세요!`,
+        source: 'L&M OS Local Calendar Index'
+      };
+    }
+    const list = tomorrowEvents.map(e => `• **${e.startTime} - ${e.endTime}**: ${e.title} (${e.location || '홈 오피스'})`).join('\n');
+    return {
+      answer: `내일(${getRelativeDateStr(1)})에는 총 **${tomorrowEvents.length}건**의 일정이 예정되어 있습니다:\n\n${list}`,
+      source: 'L&M OS Local Calendar Index'
+    };
+  }
+
+  if (lower.includes('오늘') || lower.includes('today') || lower.includes('할일')) {
+    if (todayEvents.length === 0) {
+      return {
+        answer: `오늘(${todayStr})에 등록된 일정이 없습니다. 데일리 루틴 및 딥워크 일정을 등록해보세요!`,
+        source: 'L&M OS Local Calendar Index'
+      };
+    }
+    const completed = todayEvents.filter(e => e.completed).length;
+    const list = todayEvents.map(e => `• [${e.completed ? '✅' : '⏳'}] **${e.startTime} - ${e.endTime}**: ${e.title}`).join('\n');
+    return {
+      answer: `오늘(${todayStr}) 일정은 총 **${todayEvents.length}건 중 ${completed}건 완수**되었습니다:\n\n${list}`,
+      source: 'L&M OS Local Calendar Index'
+    };
+  }
+
+  return {
+    answer: `현재 등록된 전체 일정은 **총 ${calendarEvents.length}건**입니다. 보다 고차원적인 자연어 분석 및 추천을 위해 상단에서 **Gemini API Key**를 등록하시면 전용 AI 브리핑을 받으실 수 있습니다.`,
+    source: 'L&M OS Local Schedule Kernel'
+  };
 }

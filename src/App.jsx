@@ -28,6 +28,8 @@ import { DashboardCalendarWidget } from './components/DashboardCalendarWidget';
 import { DashboardMarketWidget } from './components/DashboardMarketWidget';
 import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { GeminiApiKeyModal } from './components/GeminiApiKeyModal';
+import { getStoredGeminiApiKey } from './services/geminiService';
 
 import { 
   INITIAL_USER_PROFILE, 
@@ -177,6 +179,8 @@ export function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [levelUpModalOpen, setLevelUpModalOpen] = useState(false);
   const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
+  const [geminiKeyModalOpen, setGeminiKeyModalOpen] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => getStoredGeminiApiKey());
   const [ragInitialQuery, setRagInitialQuery] = useState('');
 
   // Sync Loop & Echo Prevention Refs
@@ -488,6 +492,8 @@ export function App() {
         onOpenObsidianModal={() => setObsidianModalOpen(true)}
         onOpenLevelModal={() => setLevelSystemModalOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
+        onOpenGeminiKeyModal={() => setGeminiKeyModalOpen(true)}
+        geminiApiKey={geminiApiKey}
         currentUser={currentUser}
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={handleToggleMusic}
@@ -513,6 +519,8 @@ export function App() {
               userProfile={userProfile}
               onNavigateTab={setActiveTab}
               onOpenObsidianModal={() => setObsidianModalOpen(true)}
+              geminiApiKey={geminiApiKey}
+              onOpenKeyModal={() => setGeminiKeyModalOpen(true)}
             />
 
             {/* 2. Quick Status HUD Cards (Clean Typography & Icon Hierarchy) */}
@@ -613,6 +621,9 @@ export function App() {
               onDeleteEvent={handleDeleteCalendarEvent}
               onBulkUpdateEvents={handleBulkUpdateCalendarEvents}
               onOpenObsidianModal={() => setObsidianModalOpen(true)}
+              geminiApiKey={geminiApiKey}
+              onOpenKeyModal={() => setGeminiKeyModalOpen(true)}
+              routines={routines}
             />
           </div>
         )}
@@ -666,7 +677,15 @@ export function App() {
         {/* TAB 4: RAG ASSISTANT & KNOWLEDGE QA */}
         {activeTab === 'rag' && (
           <div className="tab-view-container">
-            <RagAssistant initialQuery={ragInitialQuery} />
+            <RagAssistant 
+              initialQuery={ragInitialQuery}
+              calendarEvents={calendarEvents}
+              routines={routines}
+              dietLogs={dietLogs}
+              runningLogs={runningLogs}
+              expenses={expenses}
+              userProfile={userProfile}
+            />
           </div>
         )}
 
@@ -764,6 +783,12 @@ export function App() {
       <AuthSyncModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+      />
+
+      <GeminiApiKeyModal
+        isOpen={geminiKeyModalOpen}
+        onClose={() => setGeminiKeyModalOpen(false)}
+        onApiKeyUpdated={(newKey) => setGeminiApiKey(newKey)}
       />
 
       {/* Mobile Bottom Navigation Bar (Shown on Mobile screens <= 768px) */}

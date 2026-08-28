@@ -31,7 +31,9 @@ export function DashboardCalendarWidget({
   onBulkUpdateEvents,
   onGoToCalendar,
   onOpenObsidianModal,
-  geminiApiKey = null
+  geminiApiKey = null,
+  onOpenKeyModal = null,
+  routines = []
 }) {
   const now = new Date();
   const todayDateStr = getTodayDateStr();
@@ -381,6 +383,8 @@ export function DashboardCalendarWidget({
         }}
         defaultTargetDate={selectedDate}
         apiKey={geminiApiKey}
+        routines={routines}
+        onOpenKeyModal={onOpenKeyModal}
       />
     </div>
   );

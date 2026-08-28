@@ -42,7 +42,8 @@ export function DashboardCockpit({
   userProfile = {},
   onNavigateTab,
   onOpenObsidianModal,
-  geminiApiKey = null
+  geminiApiKey = null,
+  onOpenKeyModal = null
 }) {
   // -------------------------------------------------------------
   // 1. Calendar Mini Grid & Selected Day State (Dynamic Real-time Date)
@@ -833,6 +834,8 @@ export function DashboardCockpit({
         }}
         defaultTargetDate={selectedDate}
         apiKey={geminiApiKey}
+        routines={routines}
+        onOpenKeyModal={onOpenKeyModal}
       />
     </div>
   );

@@ -39,7 +39,9 @@ export function CalendarScheduler({
   onDeleteEvent,
   onBulkUpdateEvents,
   onOpenObsidianModal,
-  geminiApiKey = null
+  geminiApiKey = null,
+  onOpenKeyModal = null,
+  routines = []
 }) {
   const now = new Date();
   const todayStr = getTodayDateStr();
@@ -1031,6 +1033,7 @@ export function CalendarScheduler({
         isOpen={showAiOptimizerModal}
         onClose={() => setShowAiOptimizerModal(false)}
         currentEvents={events}
+        routines={routines}
         onApplyOptimizedEvents={(updatedEvents) => {
           if (onBulkUpdateEvents) {
             onBulkUpdateEvents(updatedEvents);
@@ -1038,6 +1041,7 @@ export function CalendarScheduler({
         }}
         defaultTargetDate={selectedDate}
         apiKey={geminiApiKey}
+        onOpenKeyModal={onOpenKeyModal}
       />
     </div>
   );

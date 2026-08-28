@@ -18,7 +18,8 @@ import {
   Activity,
   Bot,
   BookOpenCheck,
-  Terminal
+  Terminal,
+  Key
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -29,6 +30,8 @@ export function Header({
   onOpenObsidianModal, 
   onOpenLevelModal,
   onOpenAuthModal,
+  onOpenGeminiKeyModal,
+  geminiApiKey,
   currentUser,
   activeTab,
   setActiveTab,
@@ -187,6 +190,17 @@ export function Header({
             <Command size={14} />
             <span className="cmd-text">Quick Cmd</span>
             <kbd className="cmd-kbd">Ctrl+K</kbd>
+          </button>
+
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={onOpenGeminiKeyModal}
+            title="Google Gemini AI API Key 설정 (무료 발급 및 연동)"
+          >
+            <Key size={14} className={geminiApiKey ? "text-emerald" : "text-amber"} />
+            <span className="btn-obsidian-text">
+              {geminiApiKey ? "Gemini AI 🟢" : "Gemini Key ⚡"}
+            </span>
           </button>
 
           <button 
