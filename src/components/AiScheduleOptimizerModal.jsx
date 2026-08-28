@@ -187,30 +187,47 @@ export function AiScheduleOptimizerModal({
         {/* TAB 1: GENERATOR & BULK EDITOR */}
         {activeTab === 'generator' && (
           <div className="flex flex-col gap-3">
-            {/* Date Selector Row */}
-            <div className="ai-target-date-row">
-              <span className="text-xs text-muted font-semibold">적용 대상 날짜:</span>
-              <div className="date-pill-group">
+            {/* Modern Redesigned Target Date Selector */}
+            <div className="modern-date-selector-card">
+              <div className="flex items-center gap-2">
+                <CalendarIcon size={15} className="text-cyan" />
+                <span className="text-xs font-bold text-highlight">적용 대상 날짜:</span>
+                <span className="date-display-badge">
+                  {formatKoreanDate(targetDate)}
+                </span>
+              </div>
+
+              <div className="modern-date-pill-group">
                 <button 
                   type="button" 
-                  className={`date-pill ${targetDate === todayStr ? 'active' : ''}`}
+                  className={`modern-date-chip ${targetDate === todayStr ? 'active' : ''}`}
                   onClick={() => setTargetDate(todayStr)}
                 >
-                  오늘 ({todayStr.slice(5)})
+                  ⚡ 오늘 ({todayStr.slice(5)})
                 </button>
                 <button 
                   type="button" 
-                  className={`date-pill ${targetDate === tomorrowStr ? 'active' : ''}`}
+                  className={`modern-date-chip ${targetDate === tomorrowStr ? 'active' : ''}`}
                   onClick={() => setTargetDate(tomorrowStr)}
                 >
-                  내일 ({tomorrowStr.slice(5)})
+                  📅 내일 ({tomorrowStr.slice(5)})
                 </button>
-                <input
-                  type="date"
-                  className="input-text-sm mono"
-                  value={targetDate}
-                  onChange={e => setTargetDate(e.target.value)}
-                />
+                <button 
+                  type="button" 
+                  className={`modern-date-chip ${targetDate === getRelativeDateStr(2) ? 'active' : ''}`}
+                  onClick={() => setTargetDate(getRelativeDateStr(2))}
+                >
+                  🗓️ 모레 ({getRelativeDateStr(2).slice(5)})
+                </button>
+                <div className="custom-date-picker-wrapper">
+                  <input
+                    type="date"
+                    className="custom-date-input"
+                    value={targetDate}
+                    onChange={e => setTargetDate(e.target.value)}
+                    title="다른 날짜 직접 선택"
+                  />
+                </div>
               </div>
             </div>
 

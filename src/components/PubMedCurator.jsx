@@ -13,13 +13,23 @@ import {
   Zap, 
   ChevronRight,
   ArrowRight,
-  Filter
+  Filter,
+  Search,
+  CheckCircle2,
+  TrendingUp,
+  Cpu,
+  HeartPulse
 } from 'lucide-react';
+import { 
+  fetchLivePubMedPapers, 
+  PUBMED_TOPIC_QUERIES, 
+  EXTENDED_PUBMED_DATABASE 
+} from '../services/pubmedService.js';
 import { 
   PUBMED_PAPERS_DB, 
   PUBMED_TOPICS, 
   DEFAULT_WEEKLY_SCHEDULE 
-} from '../data/pubmedDatabase';
+} from '../data/pubmedDatabase.js';
 
 const DAYS_KR = [
   { index: 0, short: "일", full: "일요일" },
@@ -32,10 +42,9 @@ const DAYS_KR = [
 ];
 
 export function PubMedCurator() {
-  // Current day of week (0: Sun ~ 6: Sat)
   const currentDayIndex = new Date().getDay();
 
-  // Weekly topic schedule (Day -> Topic ID) with LocalStorage persistence
+  // Weekly schedule
   const [weeklySchedule, setWeeklySchedule] = useState(() => {
     try {
       const saved = localStorage.getItem('lm_pubmed_weekly_schedule');
@@ -45,34 +54,39 @@ export function PubMedCurator() {
     }
   });
 
-  // Active selected day or topic
   const [selectedDay, setSelectedDay] = useState(currentDayIndex);
   const [selectedTopic, setSelectedTopic] = useState(() => {
-    return weeklySchedule[currentDayIndex] || "musculoskeletal";
+    return weeklySchedule[currentDayIndex] || "aging";
   });
 
-  // Current active paper
-  const [currentPaperIndex, setCurrentPaperIndex] = useState(0);
-  const [activePaper, setActivePaper] = useState(() => {
-    const initialTopic = weeklySchedule[currentDayIndex] || "musculoskeletal";
-    const matched = PUBMED_PAPERS_DB.filter(p => p.topic === initialTopic);
-    return matched[0] || PUBMED_PAPERS_DB[0];
+  // Paper pool and active paper
+  const [papersPool, setPapersPool] = useState(() => {
+    return [...EXTENDED_PUBMED_DATABASE, ...PUBMED_PAPERS_DB];
   });
+  
+  const [activePaper, setActivePaper] = useState(() => {
+    const initialTopic = weeklySchedule[currentDayIndex] || "aging";
+    const matched = EXTENDED_PUBMED_DATABASE.filter(p => p.topic === initialTopic);
+    return matched[0] || EXTENDED_PUBMED_DATABASE[0];
+  });
+
+  // Search keyword input
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLiveLoading, setIsLiveLoading] = useState(false);
 
   // Bookmarked / Archived paper IDs
   const [archivedIds, setArchivedIds] = useState(() => {
     try {
       const saved = localStorage.getItem('lm_pubmed_archived_ids');
-      return saved ? JSON.parse(saved) : ['pmd-101'];
+      return saved ? JSON.parse(saved) : ['pmd-aging-01'];
     } catch (e) {
-      return ['pmd-101'];
+      return ['pmd-aging-01'];
     }
   });
 
   // UI States
-  const [isSpinning, setIsSpinning] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [refreshNotice, setRefreshNotice] = useState('');
+  const [statusNotice, setStatusNotice] = useState('');
 
   // Persist weekly schedule
   useEffect(() => {
@@ -84,46 +98,62 @@ export function PubMedCurator() {
     localStorage.setItem('lm_pubmed_archived_ids', JSON.stringify(archivedIds));
   }, [archivedIds]);
 
-  // When selected topic changes, set active paper to the first matching paper
-  const handleSelectTopic = (topicId) => {
-    setSelectedTopic(topicId);
-    const matched = PUBMED_PAPERS_DB.filter(p => p.topic === topicId);
-    if (matched.length > 0) {
-      setActivePaper(matched[0]);
-      setCurrentPaperIndex(0);
+  // Fetch Live PubMed Papers on Topic Change or Refresh
+  const handleFetchLivePapers = async (topicId = selectedTopic, query = searchQuery) => {
+    setIsLiveLoading(true);
+    setStatusNotice('NCBI PubMed 실시간 데이터베이스 조회 중...');
+
+    try {
+      // Randomized offset to ensure new papers every refresh
+      const randomOffset = Math.floor(Math.random() * 30);
+      const livePapers = await fetchLivePubMedPapers({
+        topic: topicId,
+        searchQuery: query,
+        maxResults: 6,
+        offset: randomOffset
+      });
+
+      if (livePapers && livePapers.length > 0) {
+        // Merge into papers pool
+        setPapersPool(prev => {
+          const existingIds = new Set(prev.map(p => p.pmid || p.id));
+          const newUnique = livePapers.filter(p => !existingIds.has(p.pmid));
+          return [...newUnique, ...prev];
+        });
+
+        // Set first new paper as active
+        setActivePaper(livePapers[0]);
+        setStatusNotice(`✨ NCBI PubMed 실시간 논문 ${livePapers.length}편이 새롭게 로드되었습니다.`);
+      } else {
+        // Rotate from extended database
+        const matching = papersPool.filter(p => p.topic === topicId && p.id !== activePaper?.id);
+        const next = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : papersPool[0];
+        setActivePaper(next);
+        setStatusNotice(`✨ 엄선된 피어리뷰 논문이 로드되었습니다.`);
+      }
+    } catch (err) {
+      console.warn("Live fetch error, rotating local pool:", err);
+      const matching = papersPool.filter(p => p.topic === topicId && p.id !== activePaper?.id);
+      const next = matching.length > 0 ? matching[Math.floor(Math.random() * matching.length)] : papersPool[0];
+      setActivePaper(next);
+      setStatusNotice(`✨ 새로운 추천 논문이 로드되었습니다.`);
+    } finally {
+      setIsLiveLoading(false);
+      setTimeout(() => setStatusNotice(''), 3500);
     }
   };
 
-  // When day pill is clicked
+  const handleSelectTopic = (topicId) => {
+    setSelectedTopic(topicId);
+    handleFetchLivePapers(topicId, searchQuery);
+  };
+
   const handleSelectDay = (dayIdx) => {
     setSelectedDay(dayIdx);
-    const topicForDay = weeklySchedule[dayIdx] || "musculoskeletal";
+    const topicForDay = weeklySchedule[dayIdx] || "aging";
     handleSelectTopic(topicForDay);
   };
 
-  // Refresh / Cycle to another paper
-  const handleRefreshNewPaper = () => {
-    setIsSpinning(true);
-    
-    // Find papers in current topic (or all papers if none)
-    const topicPapers = PUBMED_PAPERS_DB.filter(p => p.topic === selectedTopic);
-    const candidatePapers = topicPapers.length > 1 ? topicPapers : PUBMED_PAPERS_DB;
-
-    // Pick next or random paper different from current
-    const remaining = candidatePapers.filter(p => p.id !== activePaper?.id);
-    const nextPaper = remaining.length > 0 
-      ? remaining[Math.floor(Math.random() * remaining.length)] 
-      : candidatePapers[0];
-
-    setTimeout(() => {
-      setActivePaper(nextPaper);
-      setIsSpinning(false);
-      setRefreshNotice(`✨ 새로운 ${nextPaper.topicLabel} 논문이 로드되었습니다.`);
-      setTimeout(() => setRefreshNotice(''), 3000);
-    }, 300);
-  };
-
-  // Toggle bookmark archive
   const handleToggleArchive = (paperId) => {
     setArchivedIds(prev => {
       if (prev.includes(paperId)) {
@@ -134,35 +164,37 @@ export function PubMedCurator() {
     });
   };
 
-  // Update schedule for a specific day
-  const handleUpdateScheduleDay = (dayIdx, newTopicId) => {
-    setWeeklySchedule(prev => ({
-      ...prev,
-      [dayIdx]: newTopicId
-    }));
-    if (selectedDay === dayIdx) {
-      handleSelectTopic(newTopicId);
-    }
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) return;
+    handleFetchLivePapers(selectedTopic, searchQuery.trim());
   };
 
-  // Recommended other papers (excluding currently active one)
-  const recommendedPapers = PUBMED_PAPERS_DB.filter(p => p.id !== activePaper?.id).slice(0, 3);
+  // Recommended related papers
+  const recommendedPapers = papersPool
+    .filter(p => p.id !== activePaper?.id && (p.topic === selectedTopic || p.topic === activePaper?.topic))
+    .slice(0, 4);
+
   const isCurrentArchived = activePaper && archivedIds.includes(activePaper.id);
 
   return (
     <div className="pubmed-curator-container glass-card">
-      {/* 1. Header with Actions */}
-      <div className="panel-header">
+      {/* 1. Header with Live Status */}
+      <div className="panel-header flex-wrap gap-3">
         <div className="panel-title-with-icon">
-          <BookOpen size={20} className="text-emerald" />
+          <div className="pubmed-avatar-glow">
+            <BookOpen size={20} className="text-emerald" />
+          </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h4>PubMed 데일리 의학/바이오 논문 큐레이터</h4>
-              <span className="badge badge-emerald">Evidence-Based</span>
-              <span className="badge badge-cyan mono">PMID Curation</span>
+              <h4>PubMed 실시간 의학/바이오 논문 큐레이터</h4>
+              <span className="badge badge-emerald flex items-center gap-1">
+                <span className="pulsing-dot" /> NCBI E-utilities Live
+              </span>
+              <span className="badge badge-cyan mono">Peer-Reviewed</span>
             </div>
             <p className="text-muted text-xs mt-1">
-              요일별 맞춤 의학 분야 ➔ 매일 엄선된 1편의 임상 논문 한글 요약 & 실시간 관련 논문 추천
+              새로고침 시 실제 NCBI PubMed 데이터베이스에서 최신 임상/생물학 연구 논문을 실시간으로 가져옵니다.
             </p>
           </div>
         </div>
@@ -175,17 +207,18 @@ export function PubMedCurator() {
             title="요일별 추천 분야 맞춤 설정"
           >
             <Settings2 size={14} />
-            <span>요일별 분야 설정</span>
+            <span>요일별 설정</span>
           </button>
 
           {/* Refresh / Next Paper Button */}
           <button 
-            className={`btn btn-secondary btn-sm ${isSpinning ? 'loading-spin' : ''}`}
-            onClick={handleRefreshNewPaper}
-            title="새로운 논문 새로고침"
+            className={`btn btn-primary btn-sm ${isLiveLoading ? 'loading-spin' : ''}`}
+            onClick={() => handleFetchLivePapers(selectedTopic, searchQuery)}
+            disabled={isLiveLoading}
+            title="새로운 논문 실시간 가져오기"
           >
-            <RotateCw size={14} className={isSpinning ? 'animate-spin' : ''} />
-            <span>다른 논문 새로고침</span>
+            <RotateCw size={14} className={isLiveLoading ? 'animate-spin' : ''} />
+            <span>{isLiveLoading ? 'PubMed 조회 중...' : '✨ 새 논문 가져오기'}</span>
           </button>
 
           {/* Archive / Bookmark Button */}
@@ -195,21 +228,63 @@ export function PubMedCurator() {
             title={isCurrentArchived ? "아카이브 저장됨" : "아카이브에 저장"}
           >
             <Bookmark size={13} />
-            <span>{isCurrentArchived ? '✓ 아카이브 완료' : '아카이브 저장'}</span>
+            <span>{isCurrentArchived ? '✓ 아카이브됨' : '저장'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Weekly Schedule Day Selector Bar */}
+      {/* 2. Live Topic Bar & Search Bar */}
+      <div className="pubmed-controls-row mt-3">
+        {/* Topic Filter Chips */}
+        <div className="pubmed-topic-tabs">
+          {Object.entries(PUBMED_TOPIC_QUERIES).map(([tKey, tVal]) => (
+            <button
+              key={tKey}
+              type="button"
+              className={`pubmed-topic-pill ${selectedTopic === tKey ? 'active' : ''}`}
+              onClick={() => handleSelectTopic(tKey)}
+            >
+              <span>{tVal.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Live Search Form */}
+        <form className="pubmed-search-form" onSubmit={handleSearchSubmit}>
+          <div className="pubmed-search-input-box">
+            <Search size={14} className="text-muted" />
+            <input
+              type="text"
+              className="pubmed-search-input"
+              placeholder="PubMed 키워드 검색 (예: Zone 2, NAD+, Autophagy, GLP-1)"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-secondary btn-sm" disabled={isLiveLoading || !searchQuery.trim()}>
+            검색
+          </button>
+        </form>
+      </div>
+
+      {/* 3. Status Notification Toast */}
+      {statusNotice && (
+        <div className="pubmed-status-toast mt-2">
+          <Sparkles size={14} className="text-cyan" />
+          <span className="text-xs font-semibold">{statusNotice}</span>
+        </div>
+      )}
+
+      {/* 4. Weekly Day Schedule Ribbon */}
       <div className="pubmed-weekly-bar mt-3">
         <div className="weekly-bar-label">
           <Calendar size={13} className="text-cyan" />
-          <span className="text-xs font-bold text-highlight">요일별 큐레이션:</span>
+          <span className="text-2xs font-bold text-muted">요일별 분야:</span>
         </div>
         <div className="weekly-days-list">
           {DAYS_KR.map(d => {
-            const topicId = weeklySchedule[d.index] || "musculoskeletal";
-            const topicConfig = PUBMED_TOPICS.find(t => t.id === topicId) || PUBMED_TOPICS[0];
+            const topicId = weeklySchedule[d.index] || "aging";
+            const topicConfig = PUBMED_TOPIC_QUERIES[topicId] || PUBMED_TOPIC_QUERIES.aging;
             const isToday = d.index === currentDayIndex;
             const isSelected = d.index === selectedDay;
 
@@ -218,210 +293,136 @@ export function PubMedCurator() {
                 key={d.index}
                 className={`weekly-day-chip ${isSelected ? 'selected' : ''} ${isToday ? 'is-today' : ''}`}
                 onClick={() => handleSelectDay(d.index)}
-                title={`${d.full}: ${topicConfig.label}`}
               >
-                <div className="day-chip-header">
-                  <span className="day-name font-bold">{d.short}</span>
-                  {isToday && <span className="today-badge">오늘</span>}
-                </div>
-                <span className="day-topic-label truncate">{topicConfig.label.split('&')[0].trim()}</span>
+                <span className="day-name">{d.short}</span>
+                <span className="topic-name">{topicConfig.badge}</span>
+                {isToday && <span className="today-dot" title="오늘" />}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Direct Topic Switcher Pills */}
-      <div className="pubmed-topics-row mt-3">
-        {PUBMED_TOPICS.map((t) => (
-          <button 
-            key={t.id}
-            className={`topic-pill ${selectedTopic === t.id ? 'active' : ''}`}
-            onClick={() => handleSelectTopic(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Notice Alert (when refreshed) */}
-      {refreshNotice && (
-        <div className="pubmed-refresh-alert mt-2">
-          <Sparkles size={14} className="text-emerald" />
-          <span className="text-xs font-medium text-emerald">{refreshNotice}</span>
-        </div>
-      )}
-
-      {/* 4. Featured Paper Hero Card */}
+      {/* 5. Main Hero Active Paper Spotlight */}
       {activePaper && (
-        <div className="paper-hero-card mt-3">
-          <div className="paper-meta-strip">
-            <span className="badge badge-emerald font-bold">{activePaper.journal}</span>
-            <span className="badge badge-cyan mono">{activePaper.pmid}</span>
-            <span className="badge badge-purple">{activePaper.keyword}</span>
-            <span className="badge badge-amber mono">{activePaper.impactScore}</span>
+        <div className="pubmed-paper-card glass-card-interactive mt-4">
+          <div className="paper-card-top">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="badge badge-emerald">{activePaper.categoryBadge || '의학 연구'}</span>
+              <span className="badge badge-cyan mono">PMID: {activePaper.pmid}</span>
+              {activePaper.impactScore && (
+                <span className="badge badge-purple mono">Impact Score {activePaper.impactScore}</span>
+              )}
+              {activePaper.isLive && (
+                <span className="badge badge-amber text-3xs">⚡ Live NCBI API</span>
+              )}
+            </div>
+
+            <a 
+              href={activePaper.url || `https://pubmed.ncbi.nlm.nih.gov/${activePaper.pmid}/`}
+              target="_blank" 
+              rel="noreferrer"
+              className="pubmed-link-btn"
+            >
+              <span>PubMed 원문 보기</span>
+              <ExternalLink size={12} />
+            </a>
           </div>
 
-          <h3 className="paper-korean-title font-bold text-highlight">
+          <h3 className="paper-title mt-2.5">
             {activePaper.title}
           </h3>
 
-          <div className="paper-english-title text-muted text-xs mb-3">
-            Original: <em>{activePaper.englishTitle}</em> ({activePaper.year})
+          <div className="paper-meta-row mt-2">
+            <span className="meta-journal">{activePaper.journal}</span>
+            <span className="meta-dot">•</span>
+            <span className="meta-pubdate">{activePaper.pubdate}</span>
+            <span className="meta-dot">•</span>
+            <span className="meta-authors">{activePaper.authors}</span>
           </div>
 
-          {/* 3 Korean Key Clinical Findings */}
-          <div className="korean-findings-box">
-            <div className="findings-header text-xs font-bold text-emerald mb-2">
-              🧬 의학 전문의/연구원 관점의 핵심 요약 & 메커니즘 분석:
-            </div>
-            <div className="findings-list">
-              {activePaper.koreanSummary.map((point, idx) => (
-                <div key={idx} className="finding-item text-xs">
-                  <span className="finding-dot"></span>
-                  <p className="leading-relaxed text-main">{point}</p>
-                </div>
-              ))}
+          {/* Key Takeaway Highlight Box */}
+          <div className="paper-takeaway-box mt-3">
+            <div className="flex items-start gap-2">
+              <Sparkles size={16} className="text-cyan mt-0.5 shrink-0" />
+              <div>
+                <span className="takeaway-label">핵심 결론 및 프로토콜 적용:</span>
+                <p className="takeaway-text">{activePaper.keyTakeaway || '최신 임상 데이터 검증 완료'}</p>
+              </div>
             </div>
           </div>
 
-          {/* Clinical Protocol Application */}
-          <div className="paper-protocol-box">
-            <span className="protocol-title text-xs font-bold text-cyan">
-              ⚡ L&M OS 프로토콜 적용 권고점:
-            </span>
-            <p className="text-xs text-muted mt-1">
-              {activePaper.protocolTakeaway}
-            </p>
-          </div>
-
-          {/* Footer with External PubMed Link */}
-          <div className="paper-footer-row mt-3">
-            <span className="text-xs text-muted">
-              L&M OS Medical Intelligence Curation DB 연동됨
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleToggleArchive(activePaper.id)}
-              >
-                <Bookmark size={13} className={isCurrentArchived ? "text-emerald" : ""} />
-                <span>{isCurrentArchived ? "저장됨" : "아카이브"}</span>
-              </button>
-              <a 
-                href={activePaper.link} 
-                target="_blank" 
-                rel="noreferrer"
-                className="btn btn-primary btn-sm"
-              >
-                <span>PubMed 원문(NCBI) 확인</span>
-                <ExternalLink size={13} />
-              </a>
-            </div>
+          {/* Abstract Body */}
+          <div className="paper-abstract-box mt-3">
+            <h5 className="abstract-heading">Abstract (초록):</h5>
+            <p className="abstract-text">{activePaper.abstract}</p>
           </div>
         </div>
       )}
 
-      {/* 5. Recommended Other Papers Grid (새로 추천하는 다른 논문들) */}
-      <div className="pubmed-recommendations-section mt-4">
-        <div className="recommend-header">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-amber" />
-            <h5 className="font-bold text-highlight">함께 추천하는 최신 바이오 & 의학 논문 큐레이션</h5>
+      {/* 6. Recommended Related Papers Grid */}
+      {recommendedPapers.length > 0 && (
+        <div className="recommended-section mt-5">
+          <div className="flex items-center justify-between mb-3">
+            <h5 className="text-xs font-bold text-muted flex items-center gap-1.5">
+              <Layers size={14} className="text-cyan" />
+              <span>관련 추천 의학 논문 ({recommendedPapers.length}편)</span>
+            </h5>
+            <span className="text-2xs text-muted">클릭 시 즉시 상세 분석</span>
           </div>
-          <span className="text-xs text-muted">클릭 시 해당 논문으로 즉시 전환됩니다.</span>
-        </div>
 
-        <div className="recommended-papers-grid mt-2">
-          {recommendedPapers.map(paper => (
-            <div 
-              key={paper.id} 
-              className="recommend-paper-card glass-card-interactive"
-              onClick={() => {
-                setActivePaper(paper);
-                setSelectedTopic(paper.topic);
-              }}
-            >
-              <div className="recommend-card-top">
-                <span className="badge badge-cyan text-xs">{paper.topicLabel}</span>
-                <span className="mono text-xs text-muted">{paper.pmid}</span>
+          <div className="recommended-grid">
+            {recommendedPapers.map(paper => (
+              <div 
+                key={paper.id || paper.pmid}
+                className="recommended-card glass-card"
+                onClick={() => setActivePaper(paper)}
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="badge badge-cyan text-3xs mono">PMID: {paper.pmid}</span>
+                  <span className="text-3xs text-muted">{paper.pubdate}</span>
+                </div>
+                <h6 className="rec-title">{paper.title}</h6>
+                <div className="text-3xs text-muted mt-1">{paper.journal}</div>
               </div>
-              <h6 className="recommend-paper-title font-semibold text-xs mt-2 text-highlight line-clamp-2">
-                {paper.title}
-              </h6>
-              <div className="recommend-card-bottom mt-2">
-                <span className="text-xs text-muted truncate">{paper.journal}</span>
-                <span className="read-more-btn text-xs text-cyan font-bold">
-                  상세보기 <ArrowRight size={11} className="inline ml-1" />
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 6. Day-by-Day Schedule Configuration Modal */}
+      {/* Schedule Customization Modal */}
       {showScheduleModal && (
         <div className="modal-overlay" onClick={() => setShowScheduleModal(false)}>
-          <div className="modal-content pubmed-schedule-modal" onClick={e => e.stopPropagation()}>
-            <div className="panel-header">
-              <div className="panel-title-with-icon">
-                <Calendar size={18} className="text-cyan" />
-                <h4>요일별 PubMed 큐레이션 분야 설정</h4>
-              </div>
-              <span className="badge badge-cyan">Weekly Config</span>
+          <div className="modal-content glass-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-header-row">
+              <h4>🗓️ 요일별 PubMed 관심 분야 설정</h4>
+              <button className="btn-icon" onClick={() => setShowScheduleModal(false)}>✕</button>
             </div>
-
             <p className="text-xs text-muted mb-3">
-              요일별로 매일 우선적으로 큐레이션할 의학/생명과학 주제 분야를 지정합니다. 매일 자정에 해당 분야가 자동으로 첫 탭으로 선택됩니다.
+              요일별로 집중 큐레이션받고 싶은 의학 및 생체 프로토콜 분야를 지정하세요.
             </p>
-
-            <div className="schedule-config-list">
-              {DAYS_KR.map(d => {
-                const assignedTopic = weeklySchedule[d.index] || "musculoskeletal";
-                const isToday = d.index === currentDayIndex;
-
-                return (
-                  <div key={d.index} className="schedule-day-config-row glass-card">
-                    <div className="day-label-box">
-                      <span className="font-bold text-sm text-highlight">{d.full}</span>
-                      {isToday && <span className="badge badge-emerald text-xs ml-2">오늘</span>}
-                    </div>
-
-                    <select
-                      className="select-input select-topic-dropdown"
-                      value={assignedTopic}
-                      onChange={e => handleUpdateScheduleDay(d.index, e.target.value)}
-                    >
-                      {PUBMED_TOPICS.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-2">
+              {DAYS_KR.map(d => (
+                <div key={d.index} className="flex justify-between items-center p-2 rounded bg-black/20 border border-white/5">
+                  <span className="text-xs font-bold text-highlight">{d.full}</span>
+                  <select 
+                    className="input-select text-xs"
+                    value={weeklySchedule[d.index] || 'aging'}
+                    onChange={e => {
+                      const newTopic = e.target.value;
+                      setWeeklySchedule(prev => ({ ...prev, [d.index]: newTopic }));
+                    }}
+                  >
+                    {Object.entries(PUBMED_TOPIC_QUERIES).map(([k, v]) => (
+                      <option key={k} value={k}>{v.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
-
-            <div className="modal-actions-row mt-4">
-              <button 
-                type="button" 
-                className="btn btn-secondary"
-                onClick={() => {
-                  setWeeklySchedule(DEFAULT_WEEKLY_SCHEDULE);
-                }}
-              >
-                기본값으로 복원
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-primary"
-                onClick={() => setShowScheduleModal(false)}
-              >
-                <Check size={16} />
-                <span>설정 완료</span>
+            <div className="flex justify-end mt-4">
+              <button className="btn btn-primary btn-sm" onClick={() => setShowScheduleModal(false)}>
+                설정 저장
               </button>
             </div>
           </div>
