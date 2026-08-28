@@ -95,5 +95,19 @@ createRoot(document.getElementById('root')).render(
       <App />
     </ErrorBoundary>
   </StrictMode>,
-)
+);
+
+// Register PWA Service Worker for Mobile Widgets & Shortcuts
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => {
+        console.log('L&M OS PWA Service Worker registered:', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('L&M OS PWA Service Worker registration failed:', err);
+      });
+  });
+}
+
 

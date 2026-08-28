@@ -19,7 +19,8 @@ import {
   Bot,
   BookOpenCheck,
   Terminal,
-  Key
+  Key,
+  Smartphone
 } from 'lucide-react';
 import { startBinauralBeats, stopBinauralBeats, startAmbientNoise, stopAmbientNoise } from '../utils/audioSynth';
 
@@ -31,6 +32,7 @@ export function Header({
   onOpenLevelModal,
   onOpenAuthModal,
   onOpenGeminiKeyModal,
+  onOpenWidgetModal,
   geminiApiKey,
   currentUser,
   activeTab,
@@ -212,6 +214,15 @@ export function Header({
             <span className="btn-obsidian-text">
               {currentUser ? "클라우드 🟢" : "클라우드 동기화"}
             </span>
+          </button>
+
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={onOpenWidgetModal}
+            title="스마트폰 홈 화면 위젯 및 PWA 바로가기 가이드"
+          >
+            <Smartphone size={14} className="text-cyan" />
+            <span className="btn-obsidian-text">모바일 위젯</span>
           </button>
 
           <button 

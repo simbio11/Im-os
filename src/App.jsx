@@ -30,6 +30,7 @@ import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { GeminiApiKeyModal } from './components/GeminiApiKeyModal';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
+import { MobileWidgetModal } from './components/MobileWidgetModal';
 import { getStoredGeminiApiKey } from './services/geminiService';
 
 import { 
@@ -190,6 +191,7 @@ export function App() {
   const [levelUpModalOpen, setLevelUpModalOpen] = useState(false);
   const [levelSystemModalOpen, setLevelSystemModalOpen] = useState(false);
   const [geminiKeyModalOpen, setGeminiKeyModalOpen] = useState(false);
+  const [mobileWidgetModalOpen, setMobileWidgetModalOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState(() => getStoredGeminiApiKey());
   const [ragInitialQuery, setRagInitialQuery] = useState('');
 
@@ -503,6 +505,7 @@ export function App() {
         onOpenLevelModal={() => setLevelSystemModalOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenGeminiKeyModal={() => setGeminiKeyModalOpen(true)}
+        onOpenWidgetModal={() => setMobileWidgetModalOpen(true)}
         geminiApiKey={geminiApiKey}
         currentUser={currentUser}
         isMusicPlaying={isMusicPlaying}
@@ -799,6 +802,11 @@ export function App() {
         isOpen={geminiKeyModalOpen}
         onClose={() => setGeminiKeyModalOpen(false)}
         onApiKeyUpdated={(newKey) => setGeminiApiKey(newKey)}
+      />
+
+      <MobileWidgetModal
+        isOpen={mobileWidgetModalOpen}
+        onClose={() => setMobileWidgetModalOpen(false)}
       />
 
       {/* Mobile Bottom Navigation Bar (Shown on Mobile screens <= 768px) */}
