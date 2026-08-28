@@ -247,7 +247,7 @@ ${JSON.stringify(dayEvents, null, 2)}
         prompt,
         jsonMode: true,
         apiKey: key,
-        model: 'gemini-2.0-flash'
+        model: 'gemini-3.1-pro-preview'
       });
 
       const parsed = JSON.parse(rawJson);
@@ -429,7 +429,7 @@ ${question}`;
       const answer = await callGeminiApi({
         prompt,
         apiKey: key,
-        model: 'gemini-2.0-flash'
+        model: 'gemini-3.1-pro-preview'
       });
 
       return {

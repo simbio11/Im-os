@@ -66,20 +66,19 @@ export async function callGeminiApi({
   systemInstruction = '',
   jsonMode = false,
   apiKey = null,
-  model = 'gemini-2.0-flash'
+  model = 'gemini-3.1-pro-preview'
 }) {
   const key = apiKey || getStoredGeminiApiKey();
   if (!key || !key.trim()) {
     throw new Error('MISSING_API_KEY');
   }
 
-  // Model fallback candidate list with latest official Gemini 2.0 & 2.5 models
+  // Model fallback candidate list with Google recommended latest models
   const modelsToTry = [
     model, 
+    'gemini-3.1-pro-preview',
     'gemini-2.0-flash', 
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
-    'gemini-2.5-pro'
+    'gemini-1.5-flash'
   ];
   const uniqueModels = [...new Set(modelsToTry)];
 
