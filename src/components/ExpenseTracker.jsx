@@ -43,7 +43,7 @@ export const DEFAULT_PORTFOLIO_ALLOCATION = [
 
 export function ExpenseTracker({ 
   userProfile, 
-  expenses, 
+  expenses = [], 
   onAddExpense, 
   onDeleteExpense,
   onUpdateBudget,
@@ -52,11 +52,11 @@ export function ExpenseTracker({
   const [smsInput, setSmsInput] = useState('');
   const [previewParsed, setPreviewParsed] = useState(null);
   
-  // Financial Setting Modal State
+  // Financial Setting Modal State (Defaults to 0 for immediate fresh use)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [incomeInput, setIncomeInput] = useState(String(userProfile?.monthlyIncome ?? 6500000));
-  const [fixedInput, setFixedInput] = useState(String(userProfile?.fixedCosts ?? 1850000));
-  const [targetInput, setTargetInput] = useState(String(userProfile?.monthlyInvestmentTarget ?? 3000000));
+  const [incomeInput, setIncomeInput] = useState(String(userProfile?.monthlyIncome ?? 0));
+  const [fixedInput, setFixedInput] = useState(String(userProfile?.fixedCosts ?? 0));
+  const [targetInput, setTargetInput] = useState(String(userProfile?.monthlyInvestmentTarget ?? 0));
 
   // Personalized Portfolio Management State
   const [isPortfolioModalOpen, setIsPortfolioModalOpen] = useState(false);
@@ -69,13 +69,12 @@ export function ExpenseTracker({
     }
   });
 
-  // Draft state for portfolio editor
   const [draftAllocations, setDraftAllocations] = useState(portfolioAllocations);
 
-  // Financial Variables
-  const monthlyIncome = Number(userProfile?.monthlyIncome) || 6500000;
-  const fixedCosts = Number(userProfile?.fixedCosts) || 1850000;
-  const investmentTarget = Number(userProfile?.monthlyInvestmentTarget) || 3000000;
+  // Financial Variables (Defaults to 0)
+  const monthlyIncome = Number(userProfile?.monthlyIncome) || 0;
+  const fixedCosts = Number(userProfile?.fixedCosts) || 0;
+  const investmentTarget = Number(userProfile?.monthlyInvestmentTarget) || 0;
 
   // Persist Portfolio to localStorage
   useEffect(() => {
@@ -90,9 +89,9 @@ export function ExpenseTracker({
   };
 
   const saveSettings = () => {
-    const inc = Math.max(0, parseInt(String(incomeInput).replace(/,/g, ''), 10) || 0);
-    const fix = Math.max(0, parseInt(String(fixedInput).replace(/,/g, ''), 10) || 0);
-    const tgt = Math.max(0, parseInt(String(targetInput).replace(/,/g, ''), 10) || 0);
+    const inc = Math.max(0, parseInt(String(incomeInput).replace(/[^0-9]/g, ''), 10) || 0);
+    const fix = Math.max(0, parseInt(String(fixedInput).replace(/[^0-9]/g, ''), 10) || 0);
+    const tgt = Math.max(0, parseInt(String(targetInput).replace(/[^0-9]/g, ''), 10) || 0);
 
     if (onUpdateUserProfile) {
       onUpdateUserProfile({
@@ -116,13 +115,13 @@ export function ExpenseTracker({
 
   // Quick adjust helpers
   const adjustValue = (setter, currentStr, delta) => {
-    const curr = parseInt(String(currentStr).replace(/,/g, ''), 10) || 0;
+    const curr = parseInt(String(currentStr).replace(/[^0-9]/g, ''), 10) || 0;
     const next = Math.max(0, curr + delta);
     setter(String(next));
   };
 
-  const formatKoreanUnits = (numStr) => {
-    const n = parseInt(String(numStr).replace(/,/g, ''), 10) || 0;
+  const formatKoreanUnits = (numVal) => {
+    const n = typeof numVal === 'number' ? numVal : (parseInt(String(numVal).replace(/[^0-9]/g, ''), 10) || 0);
     if (n === 0) return '0원';
     const eok = Math.floor(n / 100000000);
     const man = Math.floor((n % 100000000) / 10000);
@@ -130,9 +129,8 @@ export function ExpenseTracker({
     
     let res = '';
     if (eok > 0) res += `${eok}억 `;
-    if (man > 0) res += `${man}만 `;
-    if (remainder > 0 || res === '') res += `${remainder.toLocaleString()}원`;
-    else res += '원';
+    if (man > 0) res += `${man}만원`;
+    if (man === 0 && eok === 0) res += `${remainder.toLocaleString()}원`;
     return res.trim();
   };
 
@@ -142,7 +140,7 @@ export function ExpenseTracker({
   const totalVariableExpense = variableExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
 
   // Available Free Cash Flow (Investment Surplus)
-  const availableInvestmentSurplus = monthlyIncome - fixedCosts - totalVariableExpense;
+  const availableInvestmentSurplus = Math.max(0, monthlyIncome - fixedCosts - totalVariableExpense);
   const surplusTargetPercent = investmentTarget > 0 
     ? Math.min(100, Math.max(0, Math.round((availableInvestmentSurplus / investmentTarget) * 100)))
     : 0;
@@ -163,11 +161,11 @@ export function ExpenseTracker({
   ];
 
   const chartData = {
-    labels: chartLabels.length > 0 ? chartLabels : ['기본 예산'],
+    labels: chartLabels.length > 0 ? chartLabels : ['지출 내역 없음'],
     datasets: [
       {
         data: chartDataValues.length > 0 ? chartDataValues : [1],
-        backgroundColor: categoryColors.slice(0, Math.max(1, chartLabels.length)),
+        backgroundColor: chartLabels.length > 0 ? categoryColors.slice(0, chartLabels.length) : ['rgba(255,255,255,0.05)'],
         borderColor: '#080b11',
         borderWidth: 2,
         hoverOffset: 6
@@ -183,7 +181,7 @@ export function ExpenseTracker({
         position: 'bottom',
         labels: {
           color: '#94a3b8',
-          font: { family: 'Inter', size: 11 },
+          font: { family: 'Pretendard, sans-serif', size: 11 },
           padding: 10
         }
       },
@@ -260,7 +258,9 @@ export function ExpenseTracker({
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="badge badge-cyan">스마트 잉여 현금흐름 (Free Cash Flow)</span>
-                <span className="badge badge-emerald">목표 달성률 {surplusTargetPercent}%</span>
+                {investmentTarget > 0 && (
+                  <span className="badge badge-emerald">목표 달성률 {surplusTargetPercent}%</span>
+                )}
               </div>
               <button 
                 className="btn btn-secondary btn-sm glowing-btn"
@@ -272,15 +272,23 @@ export function ExpenseTracker({
               </button>
             </div>
 
-            <h3 className="mt-1">월간 가용 현금흐름 및 자산 배분</h3>
-            <div className="surplus-equation-strip mt-1">
-              <span className="equation-term text-highlight font-bold">월 소득 (+{(monthlyIncome / 10000).toLocaleString()}만)</span>
+            <h3 className="mt-1.5">월간 가용 현금흐름 및 자산 배분</h3>
+            <div className="surplus-equation-strip mt-1.5">
+              <span className="equation-term text-highlight font-bold">
+                월 소득 (+{monthlyIncome > 0 ? formatKoreanUnits(monthlyIncome) : '0원'})
+              </span>
               <span className="equation-op text-muted">-</span>
-              <span className="equation-term text-rose font-bold">고정비 ({(fixedCosts / 10000).toLocaleString()}만)</span>
+              <span className="equation-term text-rose font-bold">
+                고정비 ({fixedCosts > 0 ? formatKoreanUnits(fixedCosts) : '0원'})
+              </span>
               <span className="equation-op text-muted">-</span>
-              <span className="equation-term text-amber font-bold">누적 지출 ({totalVariableExpense.toLocaleString()}원)</span>
+              <span className="equation-term text-amber font-bold">
+                누적 지출 ({totalVariableExpense.toLocaleString()}원)
+              </span>
               <span className="equation-op text-muted">=</span>
-              <span className="equation-result text-cyan font-extrabold text-sm">{availableInvestmentSurplus.toLocaleString()}원</span>
+              <span className="equation-result text-cyan font-extrabold text-sm">
+                {availableInvestmentSurplus.toLocaleString()}원
+              </span>
             </div>
           </div>
         </div>
@@ -352,18 +360,24 @@ export function ExpenseTracker({
               onClick={openSettings}
               title="클릭하여 투자 목표 금액 수정"
             >
-              월간 투자 목표(<span className="text-highlight underline font-bold">{investmentTarget.toLocaleString()}원 ✏️</span>) 대비 <strong className="text-emerald">{surplusTargetPercent}%</strong> 달성 중
+              {investmentTarget > 0 ? (
+                <>월간 투자 목표(<span className="text-highlight underline font-bold">{investmentTarget.toLocaleString()}원 ✏️</span>) 대비 <strong className="text-emerald">{surplusTargetPercent}%</strong> 달성 중</>
+              ) : (
+                <span className="text-cyan font-semibold">💡 상단 '재정 기준금액 설정' 버튼을 눌러 소득과 목표를 입력해보세요.</span>
+              )}
             </p>
           </div>
 
-          <div className="result-banner-right">
-            <div className="surplus-progress-track">
-              <div 
-                className="surplus-progress-fill" 
-                style={{ width: `${surplusTargetPercent}%` }}
-              ></div>
+          {investmentTarget > 0 && (
+            <div className="result-banner-right">
+              <div className="surplus-progress-track">
+                <div 
+                  className="surplus-progress-fill" 
+                  style={{ width: `${surplusTargetPercent}%` }}
+                ></div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -452,7 +466,7 @@ export function ExpenseTracker({
               <h5>자연어 지출 등록</h5>
             </div>
             <p className="text-muted text-xs mt-1">
-              "점심 스타벅스 6500원", "신한카드 8/28 결제 배민 23000원", "교보문고 책 38000원" 등 자유롭게 입력하세요.
+              "점심 스타벅스 6500원", "신한카드 결제 배민 23000원", "교보문고 책 38000원" 등 자유롭게 입력하세요.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-3">
@@ -494,7 +508,7 @@ export function ExpenseTracker({
 
             <div className="expense-list-container mt-2">
               {expenses.length === 0 ? (
-                <div className="empty-expense-state">
+                <div className="empty-expense-state p-4 text-center">
                   <p className="text-muted text-xs">등록된 지출 내역이 없습니다.</p>
                 </div>
               ) : (
@@ -557,10 +571,10 @@ export function ExpenseTracker({
         </div>
       </div>
 
-      {/* ⚙️ 4. FINANCIAL BASELINE SETTINGS MODAL */}
+      {/* ⚙️ 4. REDESIGNED FINANCIAL BASELINE SETTINGS MODAL (Clean, Luxury UI) */}
       {isSettingsModalOpen && (
         <div className="modal-backdrop-blur" onClick={() => setIsSettingsModalOpen(false)}>
-          <div className="financial-modal-card glass-card" onClick={e => e.stopPropagation()}>
+          <div className="financial-modal-card-clean glass-card" onClick={e => e.stopPropagation()}>
             <div className="modal-top-bar flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <div className="modal-icon-badge bg-cyan-500/20 text-cyan p-2 rounded-lg">
@@ -578,73 +592,81 @@ export function ExpenseTracker({
 
             <div className="modal-body-content mt-4 space-y-4">
               {/* Field 1: Monthly Income */}
-              <div className="financial-input-group glass-card p-3 border border-cyan-500/20">
+              <div className="financial-clean-card">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <Coins size={15} className="text-cyan" />
                     <span className="text-xs font-bold text-cyan">1. 당월 총소득 (월급 / 사업 소득)</span>
                   </div>
-                  <span className="mono text-xs font-bold text-highlight">{formatKoreanUnits(incomeInput)}</span>
+                  <span className="text-xs font-bold text-highlight">{formatKoreanUnits(incomeInput)}</span>
                 </div>
-                <div className="input-currency-wrapper">
+                <div className="clean-input-box">
                   <input
-                    type="text"
-                    className="input-text mono text-sm font-bold w-full"
+                    type="number"
+                    className="clean-number-input"
+                    placeholder="0"
                     value={incomeInput}
                     onChange={e => setIncomeInput(e.target.value)}
                   />
+                  <span className="clean-input-unit">원</span>
                 </div>
-                <div className="quick-adjust-chips mt-2 flex gap-1.5 flex-wrap">
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setIncomeInput, incomeInput, 500000)}>+50만</button>
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setIncomeInput, incomeInput, 1000000)}>+100만</button>
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setIncomeInput, incomeInput, -500000)}>-50만</button>
+                <div className="quick-adjust-chips-clean mt-2 flex gap-1.5 flex-wrap">
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setIncomeInput, incomeInput, 500000)}>+50만원</button>
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setIncomeInput, incomeInput, 1000000)}>+100만원</button>
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setIncomeInput, incomeInput, 3000000)}>+300만원</button>
+                  <button type="button" className="chip-adjust-clean reset" onClick={() => setIncomeInput('0')}>0원 리셋</button>
                 </div>
               </div>
 
               {/* Field 2: Fixed Costs */}
-              <div className="financial-input-group glass-card p-3 border border-rose-500/20">
+              <div className="financial-clean-card">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <Building size={15} className="text-rose" />
                     <span className="text-xs font-bold text-rose">2. 월간 고정비 (월세, 보험, 대출 등)</span>
                   </div>
-                  <span className="mono text-xs font-bold text-highlight">{formatKoreanUnits(fixedInput)}</span>
+                  <span className="text-xs font-bold text-highlight">{formatKoreanUnits(fixedInput)}</span>
                 </div>
-                <div className="input-currency-wrapper">
+                <div className="clean-input-box">
                   <input
-                    type="text"
-                    className="input-text mono text-sm font-bold w-full"
+                    type="number"
+                    className="clean-number-input"
+                    placeholder="0"
                     value={fixedInput}
                     onChange={e => setFixedInput(e.target.value)}
                   />
+                  <span className="clean-input-unit">원</span>
                 </div>
-                <div className="quick-adjust-chips mt-2 flex gap-1.5 flex-wrap">
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setFixedInput, fixedInput, 100000)}>+10만</button>
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setFixedInput, fixedInput, 500000)}>+50만</button>
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setFixedInput, fixedInput, -100000)}>-10만</button>
+                <div className="quick-adjust-chips-clean mt-2 flex gap-1.5 flex-wrap">
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setFixedInput, fixedInput, 100000)}>+10만원</button>
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setFixedInput, fixedInput, 500000)}>+50만원</button>
+                  <button type="button" className="chip-adjust-clean reset" onClick={() => setFixedInput('0')}>0원 리셋</button>
                 </div>
               </div>
 
               {/* Field 3: Monthly Investment Target */}
-              <div className="financial-input-group glass-card p-3 border border-emerald-500/20">
+              <div className="financial-clean-card">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
                     <Target size={15} className="text-emerald" />
                     <span className="text-xs font-bold text-emerald">3. 월간 목표 투자액</span>
                   </div>
-                  <span className="mono text-xs font-bold text-highlight">{formatKoreanUnits(targetInput)}</span>
+                  <span className="text-xs font-bold text-highlight">{formatKoreanUnits(targetInput)}</span>
                 </div>
-                <div className="input-currency-wrapper">
+                <div className="clean-input-box">
                   <input
-                    type="text"
-                    className="input-text mono text-sm font-bold w-full"
+                    type="number"
+                    className="clean-number-input"
+                    placeholder="0"
                     value={targetInput}
                     onChange={e => setTargetInput(e.target.value)}
                   />
+                  <span className="clean-input-unit">원</span>
                 </div>
-                <div className="quick-adjust-chips mt-2 flex gap-1.5 flex-wrap">
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setTargetInput, targetInput, 500000)}>+50만</button>
-                  <button type="button" className="chip-adjust" onClick={() => adjustValue(setTargetInput, targetInput, 1000000)}>+100만</button>
+                <div className="quick-adjust-chips-clean mt-2 flex gap-1.5 flex-wrap">
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setTargetInput, targetInput, 500000)}>+50만원</button>
+                  <button type="button" className="chip-adjust-clean" onClick={() => adjustValue(setTargetInput, targetInput, 1000000)}>+100만원</button>
+                  <button type="button" className="chip-adjust-clean reset" onClick={() => setTargetInput('0')}>0원 리셋</button>
                 </div>
               </div>
             </div>
@@ -667,7 +689,7 @@ export function ExpenseTracker({
                   <Briefcase size={18} />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-highlight">💼 개인 맞춤형 포트폴리오 비중 설정</h4>
+                  <h4 className="text-base font-bold text-highlight">개인 맞춤형 포트폴리오 비중 설정</h4>
                   <p className="text-muted text-xs">본인의 투자 성향에 맞게 자산군과 비중(%)을 자유롭게 구성하세요.</p>
                 </div>
               </div>
@@ -677,7 +699,7 @@ export function ExpenseTracker({
             </div>
 
             {/* Quick Strategy Presets */}
-            <div className="preset-strategies-bar mt-3 p-2 rounded-lg bg-black/30 border border-white/5">
+            <div className="preset-strategies-bar mt-3 p-2.5 rounded-lg bg-black/30 border border-white/5">
               <span className="text-2xs font-bold text-muted mr-2">추천 전략 프리셋:</span>
               <div className="flex gap-1.5 flex-wrap mt-1">
                 <button type="button" className="btn btn-secondary btn-xs" onClick={() => applyPresetStrategy('growth')}>

@@ -29,6 +29,7 @@ import { DashboardMarketWidget } from './components/DashboardMarketWidget';
 import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { GeminiApiKeyModal } from './components/GeminiApiKeyModal';
+import { FloatingAiAssistant } from './components/FloatingAiAssistant';
 import { getStoredGeminiApiKey } from './services/geminiService';
 
 import { 
@@ -795,6 +796,18 @@ export function App() {
       <MobileBottomNav 
         activeTab={activeTab} 
         onSelectTab={setActiveTab} 
+      />
+
+      {/* Global Floating Real-time AI Copilot Assistant */}
+      <FloatingAiAssistant 
+        calendarEvents={calendarEvents}
+        routines={routines}
+        dietLogs={dietLogs}
+        runningLogs={runningLogs}
+        expenses={expenses}
+        userProfile={userProfile}
+        onNavigateTab={setActiveTab}
+        onBulkUpdateCalendarEvents={handleBulkUpdateCalendarEvents}
       />
     </div>
   );
