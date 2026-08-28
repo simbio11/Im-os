@@ -35,11 +35,11 @@ export function GeminiApiKeyModal({ isOpen, onClose, onApiKeyUpdated }) {
     setStatusMessage(null);
 
     try {
-      // Test the key with a fast ping
+      // Test the key with a fast ping using Gemini 2.0 Flash
       await callGeminiApi({
         prompt: 'Ping! Respond with "OK".',
         apiKey: trimmed,
-        model: 'gemini-1.5-flash'
+        model: 'gemini-2.0-flash'
       });
 
       saveStoredGeminiApiKey(trimmed);

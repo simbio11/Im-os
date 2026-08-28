@@ -66,15 +66,21 @@ export async function callGeminiApi({
   systemInstruction = '',
   jsonMode = false,
   apiKey = null,
-  model = 'gemini-1.5-flash'
+  model = 'gemini-2.0-flash'
 }) {
   const key = apiKey || getStoredGeminiApiKey();
   if (!key || !key.trim()) {
     throw new Error('MISSING_API_KEY');
   }
 
-  // Model fallback candidate list
-  const modelsToTry = [model, 'gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  // Model fallback candidate list with latest official Gemini 2.0 & 2.5 models
+  const modelsToTry = [
+    model, 
+    'gemini-2.0-flash', 
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro'
+  ];
   const uniqueModels = [...new Set(modelsToTry)];
 
   let lastError = null;
