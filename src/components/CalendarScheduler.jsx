@@ -369,6 +369,22 @@ export function CalendarScheduler({
               <span>옵시디언 싱크</span>
             </button>
 
+            {events && events.length > 0 && onBulkUpdateEvents && (
+              <button 
+                type="button"
+                className="btn btn-secondary btn-sm text-rose hover:border-rose/40"
+                onClick={() => {
+                  if (window.confirm("등록된 모든 일정을 캘린더에서 삭제하시겠습니까?")) {
+                    onBulkUpdateEvents([]);
+                  }
+                }}
+                title="캘린더의 모든 일정 초기화"
+              >
+                <Trash2 size={13} className="text-rose" />
+                <span>일정 비우기</span>
+              </button>
+            )}
+
             <button 
               className="btn btn-primary btn-sm"
               onClick={() => handleOpenAddModal(selectedDate)}

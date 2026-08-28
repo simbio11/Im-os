@@ -143,7 +143,15 @@ export function parseLocalScheduleInstruction(text, todayStr = getTodayDateStr()
   const currentYear = parseInt(currentYearStr, 10);
   const currentMonth = parseInt(currentMonthStr, 10);
 
-  // Check delete commands
+  // Check full clear commands
+  if (/(?:전체|모든|전부|다)\s*(?:일정)?\s*(?:삭제|지워|제거|비워|초기화)|캘린더\s*(?:초기화|비워)/i.test(text)) {
+    return {
+      answer: "캘린더의 모든 일정이 성공적으로 초기화(삭제)되었습니다.",
+      actions: [{ type: 'CLEAR_ALL_CALENDAR_EVENTS' }]
+    };
+  }
+
+  // Check delete by keyword commands
   if (/삭제|지워|제거|취소|빼줘/i.test(text)) {
     const cleanKw = text
       .replace(/일정|삭제해줘|지워줘|제거해줘|취소해줘|빼줘|모두|전부/g, '')

@@ -91,7 +91,12 @@ export function FloatingAiAssistant({
       // Execute actual actions if any were produced
       if (result.actions && result.actions.length > 0) {
         for (const act of result.actions) {
-          if (act.type === 'ADD_CALENDAR_EVENTS' && Array.isArray(act.events) && act.events.length > 0) {
+          if (act.type === 'CLEAR_ALL_CALENDAR_EVENTS') {
+            if (onBulkUpdateCalendarEvents) {
+              onBulkUpdateCalendarEvents([]);
+            }
+            actionMeta = { type: 'clear_all' };
+          } else if (act.type === 'ADD_CALENDAR_EVENTS' && Array.isArray(act.events) && act.events.length > 0) {
             // Merge new events into calendar
             const updated = [...calendarEvents, ...act.events];
             if (onBulkUpdateCalendarEvents) {
@@ -204,30 +209,44 @@ export function FloatingAiAssistant({
             <button 
               type="button"
               className="floating-quick-chip"
-              onClick={() => handleSend("9월 매주 월, 목에 순회진료 일정 넣어줘")}
+              onClick={() => handleSend("내일 오후 2시에 딥워크 일정 추가해줘")}
             >
-              🏥 9월 순회진료 편성
+              ⚡ 내일 딥워크 등록
             </button>
             <button 
               type="button"
               className="floating-quick-chip"
-              onClick={() => handleSend("내일 일정 브리핑해줘")}
+              onClick={() => handleSend("오늘 일정과 루틴 브리핑해줘")}
             >
-              📅 내일 일정
+              📅 오늘 일정 브리핑
             </button>
             <button 
               type="button"
               className="floating-quick-chip"
               onClick={() => handleSend("이번 달 투자 가용 잉여금 얼마야?")}
             >
-              💵 가용 잉여금
+              💵 가용 잉여금 분석
             </button>
             <button 
               type="button"
               className="floating-quick-chip"
-              onClick={() => handleSend("엔비디아 블랙웰 실적 요약해줘")}
+              onClick={() => handleSend("오늘 먹은 칼로리와 단백질 분석해줘")}
             >
-              🚀 엔비디아
+              🥗 식단 영양 요약
+            </button>
+            <button 
+              type="button"
+              className="floating-quick-chip"
+              onClick={() => handleSend("엔비디아와 나스닥 시장 브리핑해줘")}
+            >
+              🚀 시장 & 주식 브리핑
+            </button>
+            <button 
+              type="button"
+              className="floating-quick-chip text-rose"
+              onClick={() => handleSend("전체 일정 초기화해줘")}
+            >
+              🧹 전체 일정 비우기
             </button>
           </div>
 
@@ -241,6 +260,13 @@ export function FloatingAiAssistant({
                   ))}
 
                   {/* Action Confirmation & Navigation Badge */}
+                  {msg.actionMeta?.type === 'clear_all' && (
+                    <div className="mt-2 pt-1 border-t border-white/10 text-2xs text-rose font-bold flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      <span>캘린더의 모든 일정이 깨끗하게 초기화되었습니다.</span>
+                    </div>
+                  )}
+
                   {msg.actionMeta?.type === 'calendar' && (
                     <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1.5">
                       <div className="text-2xs text-emerald font-bold flex items-center gap-1">
