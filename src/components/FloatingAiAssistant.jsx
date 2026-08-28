@@ -182,7 +182,7 @@ export function FloatingAiAssistant({
               <div>
                 <h5 className="floating-header-title">L&M AI Copilot</h5>
                 <span className="floating-status-pill">
-                  {apiKey ? '🟢 Gemini 3.1 Pro Live' : '⚡ 지능형 내장 AI'}
+                  {apiKey ? '🟢 Gemini AI Live' : '⚡ 지능형 내장 AI'}
                 </span>
               </div>
             </div>

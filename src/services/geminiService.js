@@ -66,7 +66,7 @@ export async function callGeminiApi({
   systemInstruction = '',
   jsonMode = false,
   apiKey = null,
-  model = 'gemini-3.1-pro-preview'
+  model = 'gemini-2.0-flash'
 }) {
   const key = apiKey || getStoredGeminiApiKey();
   if (!key || !key.trim()) {
@@ -76,9 +76,9 @@ export async function callGeminiApi({
   // Model fallback candidate list with Google recommended latest models
   const modelsToTry = [
     model, 
-    'gemini-3.1-pro-preview',
     'gemini-2.0-flash', 
-    'gemini-1.5-flash'
+    'gemini-1.5-flash',
+    'gemini-3.1-pro-preview'
   ];
   const uniqueModels = [...new Set(modelsToTry)];
 
