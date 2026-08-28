@@ -1,20 +1,18 @@
-// L&M OS Smart Action & High-Intelligence Schedule Execution Engine
+// L&M OS Smart Action & Ultra-Precise Schedule Execution Engine
 import { callGeminiApi, getStoredGeminiApiKey, buildGlobalSystemContext } from '../services/geminiService.js';
 import { getTodayDateStr, formatKoreanDate, getRelativeDateStr } from './dateUtils.js';
 
 /**
- * Robust JSON Extractor (Handles raw JSON, markdown code fences, embedded objects)
+ * Robust JSON Extractor
  */
 export function extractJson(rawText) {
   if (!rawText || typeof rawText !== 'string') return null;
   const trimmed = rawText.trim();
   
-  // 1. Direct parse
   try {
     return JSON.parse(trimmed);
   } catch (e) {}
 
-  // 2. Markdown fence ```json ... ``` or ``` ... ```
   const codeBlockMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   if (codeBlockMatch && codeBlockMatch[1]) {
     try {
@@ -22,7 +20,6 @@ export function extractJson(rawText) {
     } catch (e) {}
   }
 
-  // 3. Substring between outermost { and }
   const firstBrace = trimmed.indexOf('{');
   const lastBrace = trimmed.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -98,7 +95,48 @@ export function parseTimeRange(text) {
 }
 
 /**
- * Intelligent Local Rule Parser (Zero hallucinations, accurate regex & period math)
+ * Strict and Accurate Weekday Parser (Prevents '일' in '일정' from triggering Sunday)
+ */
+export function parseWeekdaysStrict(text) {
+  const weekdays = [];
+  const dayMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 };
+
+  // 1. Direct regex for explicit weekday phrases after '매주' or before '요일'
+  const recurringSectionMatch = text.match(/매주\s*([월화수목금토일,\s/·~]+)/);
+  if (recurringSectionMatch && recurringSectionMatch[1]) {
+    const rawSec = recurringSectionMatch[1].replace(/요일|에|마다|일정/g, '');
+    for (const [char, val] of Object.entries(dayMap)) {
+      if (rawSec.includes(char)) {
+        if (!weekdays.includes(val)) weekdays.push(val);
+      }
+    }
+  }
+
+  // 2. Combo phrases like "월 목", "월, 목", "월/목", "월수금", "화목"
+  if (weekdays.length === 0) {
+    if (/월\s*목|월,\s*목|월\/목/.test(text)) {
+      weekdays.push(1, 4);
+    } else if (/월\s*수\s*금/.test(text)) {
+      weekdays.push(1, 3, 5);
+    } else if (/화\s*목/.test(text)) {
+      weekdays.push(2, 4);
+    } else if (/화\s*금/.test(text)) {
+      weekdays.push(2, 5);
+    } else {
+      // Check explicit "X요일" patterns only
+      for (const [char, val] of Object.entries(dayMap)) {
+        if (text.includes(`${char}요일`)) {
+          if (!weekdays.includes(val)) weekdays.push(val);
+        }
+      }
+    }
+  }
+
+  return weekdays;
+}
+
+/**
+ * Ultra-Precise Local Rule Parser
  */
 export function parseLocalScheduleInstruction(text, todayStr = getTodayDateStr()) {
   const [currentYearStr, currentMonthStr] = todayStr.split('-');
@@ -116,17 +154,11 @@ export function parseLocalScheduleInstruction(text, todayStr = getTodayDateStr()
     };
   }
 
-  // 1. Time parsing
-  const { startTime, endTime } = parseTimeRange(text);
+  // 1. Strict Weekday detection
+  const weekdays = parseWeekdaysStrict(text);
 
-  // 2. Weekday detection
-  const weekdays = [];
-  const dayMap = { '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6, '일': 0 };
-  for (const [char, val] of Object.entries(dayMap)) {
-    if (text.includes(char) && (text.includes(`${char}요일`) || text.includes(`월 목`) || text.includes(`월, 목`) || text.includes(`월수금`) || text.includes(`화목`) || text.includes(`매주`) || text.includes(`마다`))) {
-      if (!weekdays.includes(val)) weekdays.push(val);
-    }
-  }
+  // 2. Accurate Time Range
+  const { startTime, endTime } = parseTimeRange(text);
 
   // 3. Date & Period detection
   let startDate = todayStr;
@@ -168,23 +200,28 @@ export function parseLocalScheduleInstruction(text, todayStr = getTodayDateStr()
   }
 
   // 4. Location extraction
-  let location = '진료지 / 파견지';
+  let location = '진료지';
   const locMatch = text.match(/(서면|판교|강남|여의도|본원|분원|자택|연구실|병원|클리닉|사무실)/);
   if (locMatch) {
     location = locMatch[1];
   }
 
-  // 5. Clean Title extraction (Clean all metadata phrases)
+  // 5. Clean Title extraction (Pristine surgical cleanup)
   let cleanTitle = text
-    .replace(/(?:내년|\d{4}년|\d{1,2}월(?:까지|말|동안)?|\d{1,2}일)/g, '')
-    .replace(/(?:매주|마다|[월화수목금토일,\s/·~-]+(?:요일)?(?:에|마다)?)/g, '')
-    .replace(/(?:시간은\s*)?(?:오전|오후|아침|저녁|새벽)?\s*\d{1,2}(?:시|:)?(?:\d{2})?(?:부터|~|-|\s)*(?:오전|오후|아침|저녁|새벽)?\s*\d{1,2}(?:시|:)?(?:\d{2})?(?:까지)?/g, '')
-    .replace(/(?:서면|판교|강남|여의도|본원|분원|자택|연구실|병원|클리닉)/g, '')
-    .replace(/일정|넣어줘|등록해줘|추가해줘|잡아줘|편성해줘|기록해줘/g, '')
+    .replace(/(?:내년|\d{4}년|\d{1,2}월(?:까지|말|동안)?|\d{1,2}일)/g, ' ')
+    .replace(/매주\s*[월화수목금토일,\s/·~]+(?:요일)?(?:에|마다)?/g, ' ')
+    .replace(/[월화수목금토일,\s/·~]+요일(?:에|마다)?/g, ' ')
+    .replace(/시간은\s*[^\s]+(?:부터|~|-)\s*[^\s]+(?:까지)?/g, ' ')
+    .replace(/(?:오전|오후|아침|저녁|새벽)?\s*\d{1,2}(?:시|:)?(?:\d{2})?(?:부터|~|-|\s)*(?:오전|오후|아침|저녁|새벽)?\s*\d{1,2}(?:시|:)?(?:\d{2})?(?:까지)?/g, ' ')
+    .replace(/일정\s*(?:넣어줘|추가해줘|등록해줘|잡아줘|편성해줘|기록해줘|넣어|추가|등록)/g, ' ')
+    .replace(/(?:넣어줘|추가해줘|등록해줘|잡아줘|편성해줘|기록해줘|넣어|추가|등록)/g, ' ')
+    .replace(/시간은|시간|일정/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
+  // If user mentioned location, ensure cleanTitle includes or formats properly
   if (!cleanTitle || cleanTitle.length < 2) {
-    cleanTitle = /진료|순회/.test(text) ? '순회진료' : '예정 일정';
+    cleanTitle = /진료|순회/.test(text) ? '서면 순회진료' : '예정 일정';
   }
 
   // 6. Category
@@ -209,7 +246,7 @@ export function parseLocalScheduleInstruction(text, todayStr = getTodayDateStr()
     category,
     location,
     completed: false,
-    notes: isRecurring ? `AI 정기 편성 (${weekdayKorean} ${startTime}~${endTime})` : `AI 일정 등록`
+    notes: isRecurring ? `정기 일정 (${weekdayKorean} ${startTime}~${endTime})` : `AI 일정 등록`
   }));
 
   const summary = isRecurring
@@ -263,20 +300,20 @@ ${systemContext}
 "${userInput}"
 
 [추출 및 정제 규칙]:
-1. 제목(title): 문장의 군더더기(내년 3월까지, 매주 월 목, 서면, 시간은 9시부터 등)를 전부 제거하고 순수한 일정 이름(예: "순회진료", "팀 미팅", "딥워크")만 남기세요.
-2. 장소(location): 문장에 등장한 장소(예: "서면", "판교", "강남", "본원" 등)를 추출하세요. 없으면 "지정 장소".
-3. 시간(startTime, endTime): 24시간 형식 "HH:MM" (예: "09:00", "18:00"). 언급이 없으면 09:00~18:00 또는 14:00~15:30.
+1. 제목(title): "서면 순회진료" 또는 "순회진료"처럼 핵심 일정 이름만 깔끔하게 남기세요. 문장의 군더더기(내년 3월까지, 매주 월 목, 시간은 9시부터, 일정 넣어줘 등)는 전부 제거하세요.
+2. 장소(location): 문장에 등장한 장소(예: "서면", "판교", "강남", "본원" 등)를 추출하세요. 없으면 "진료지".
+3. 시간(startTime, endTime): 24시간 형식 "HH:MM" (예: "09:00", "18:00").
 4. 반복 범위:
    - 시작일(startDate): 오늘(${todayStr})
    - 종료일(endDate): 지정된 시점 (예: 내년 3월 -> 2027-03-31, 9월 -> 2026-09-30). 단일 일정이면 시작일과 동일.
-   - 반복 요일(weekdays): [1, 4] (0=일, 1=월, 2=화, 3=수, 4=목, 5=금, 6=토). 단일 일정이면 [].
+   - 반복 요일(weekdays): 정확히 지정된 요일만 배열로 반환 (0=일, 1=월, 2=화, 3=수, 4=목, 5=금, 6=토). 예: 월, 목 -> [1, 4]. 단일 일정이면 []. 절대로 언급되지 않은 일요일(0)을 넣지 마세요!
 5. 카테고리(category): ["deepwork", "fitness", "market", "meeting", "personal"] 중 하나.
 
 반드시 아래 JSON 형식으로만 응답하세요:
 {
-  "answer": "친절하고 명확한 한국어 작업 요약 안내 메시지",
+  "answer": "2027년 3월까지 매주 월, 목요일 (09:00~18:00) '서면 순회진료' 일정을 캘린더에 성공적으로 등록했습니다.",
   "rule": {
-    "title": "순회진료",
+    "title": "서면 순회진료",
     "location": "서면",
     "category": "meeting",
     "startTime": "09:00",
@@ -316,9 +353,9 @@ ${systemContext}
             endTime: parsed.rule.endTime || '18:00',
             title: parsed.rule.title,
             category: parsed.rule.category || 'meeting',
-            location: parsed.rule.location || '지정 장소',
+            location: parsed.rule.location || '서면',
             completed: false,
-            notes: parsed.rule.notes || 'Gemini AI 자동 생성'
+            notes: parsed.rule.notes || '정기 일정'
           }));
 
           if (generatedEvents.length > 0) {
