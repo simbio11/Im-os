@@ -11,25 +11,133 @@ import {
   ExternalLink,
   ShieldCheck,
   RefreshCw,
-  Sliders
+  Sliders,
+  CheckCircle2,
+  Lock,
+  Layers,
+  Cpu
 } from 'lucide-react';
 import { getStoredGeminiApiKey, saveStoredGeminiApiKey } from '../services/geminiService.js';
 
-export const THEME_COLOR_PRESETS = [
-  { id: 'cyan', name: 'Cyber Cyan', hex: '#00f0ff', glow: 'rgba(0, 240, 255, 0.35)', desc: '사이버 네온 시안 (기본)' },
-  { id: 'purple', name: 'Neon Purple', hex: '#a855f7', glow: 'rgba(168, 85, 247, 0.35)', desc: '바이올렛 딥워크' },
-  { id: 'emerald', name: 'Emerald Alpha', hex: '#10b981', glow: 'rgba(16, 185, 129, 0.35)', desc: '에메랄드 바이탈' },
-  { id: 'rose', name: 'Crimson Rose', hex: '#f43f5e', glow: 'rgba(244, 63, 94, 0.35)', desc: '크림슨 포커스' },
-  { id: 'amber', name: 'Electric Amber', hex: '#f59e0b', glow: 'rgba(245, 158, 11, 0.35)', desc: '골든 앰버 마켓' },
-  { id: 'blue', name: 'Sapphire Blue', hex: '#3b82f6', glow: 'rgba(59, 130, 246, 0.35)', desc: '사파이어 딥블루' }
+export const THEME_PRESETS = [
+  { 
+    id: 'cyan', 
+    name: 'Cyber Cyan', 
+    koreanName: '사이버 네온 시안',
+    bgCore: '#070b14',
+    bgSurface: '#0d1527',
+    bgSurfaceElevated: '#121d36',
+    bgGlass: 'rgba(13, 21, 39, 0.82)',
+    bgGlassCard: 'rgba(18, 29, 54, 0.68)',
+    accent: '#00f0ff', 
+    accentSecondary: '#38bdf8',
+    glow: 'rgba(0, 240, 255, 0.4)',
+    borderGlass: 'rgba(0, 240, 255, 0.22)',
+    desc: '미래지향적 사이버펑크 네온 블루 테마' 
+  },
+  { 
+    id: 'purple', 
+    name: 'Obsidian Violet', 
+    koreanName: '옵시디언 바이올렛',
+    bgCore: '#0e0e15',
+    bgSurface: '#14141f',
+    bgSurfaceElevated: '#1b1a29',
+    bgGlass: 'rgba(20, 20, 31, 0.82)',
+    bgGlassCard: 'rgba(27, 26, 41, 0.68)',
+    accent: '#a855f7', 
+    accentSecondary: '#c084fc',
+    glow: 'rgba(168, 85, 247, 0.42)',
+    borderGlass: 'rgba(168, 85, 247, 0.24)',
+    desc: '몰입형 딥워크 & 옵시디언 다크 테마' 
+  },
+  { 
+    id: 'emerald', 
+    name: 'Emerald Matrix', 
+    koreanName: '에메랄드 매트릭스',
+    bgCore: '#05110c',
+    bgSurface: '#0a1d15',
+    bgSurfaceElevated: '#0f291e',
+    bgGlass: 'rgba(10, 29, 21, 0.82)',
+    bgGlassCard: 'rgba(15, 41, 30, 0.68)',
+    accent: '#10b981', 
+    accentSecondary: '#34d399',
+    glow: 'rgba(16, 185, 129, 0.42)',
+    borderGlass: 'rgba(16, 185, 129, 0.24)',
+    desc: '바이탈 에너지 & 피트니스 에메랄드 테마' 
+  },
+  { 
+    id: 'rose', 
+    name: 'Crimson Stealth', 
+    koreanName: '크림슨 스텔스',
+    bgCore: '#11070a',
+    bgSurface: '#1d0c11',
+    bgSurfaceElevated: '#281118',
+    bgGlass: 'rgba(29, 12, 17, 0.82)',
+    bgGlassCard: 'rgba(40, 17, 24, 0.68)',
+    accent: '#f43f5e', 
+    accentSecondary: '#fb7185',
+    glow: 'rgba(244, 63, 94, 0.42)',
+    borderGlass: 'rgba(244, 63, 94, 0.24)',
+    desc: '묵직한 카리스마 & 집중 크림슨 레드 테마' 
+  },
+  { 
+    id: 'amber', 
+    name: 'Midnight Gold', 
+    koreanName: '미드나잇 골드',
+    bgCore: '#110d05',
+    bgSurface: '#1c160a',
+    bgSurfaceElevated: '#271f0f',
+    bgGlass: 'rgba(28, 22, 10, 0.82)',
+    bgGlassCard: 'rgba(39, 31, 15, 0.68)',
+    accent: '#f59e0b', 
+    accentSecondary: '#fbbf24',
+    glow: 'rgba(245, 158, 11, 0.42)',
+    borderGlass: 'rgba(245, 158, 11, 0.24)',
+    desc: '월스트리트 마켓 & 럭셔리 골든 앰버 테마' 
+  },
+  { 
+    id: 'blue', 
+    name: 'Abyssal Sapphire', 
+    koreanName: '어비셜 사파이어',
+    bgCore: '#050b16',
+    bgSurface: '#0b1424',
+    bgSurfaceElevated: '#101d33',
+    bgGlass: 'rgba(11, 20, 36, 0.82)',
+    bgGlassCard: 'rgba(16, 29, 51, 0.68)',
+    accent: '#3b82f6', 
+    accentSecondary: '#60a5fa',
+    glow: 'rgba(59, 130, 246, 0.42)',
+    borderGlass: 'rgba(59, 130, 246, 0.24)',
+    desc: '심해 네이비 & 일렉트릭 사파이어 블루 테마' 
+  }
 ];
 
-export function applyThemeColor(themeHex, glowRgba) {
-  document.documentElement.style.setProperty('--cyan-primary', themeHex);
-  document.documentElement.style.setProperty('--cyan-glow', glowRgba);
-  document.documentElement.style.setProperty('--border-glow', `0 0 15px ${glowRgba}`);
-  localStorage.setItem('lm_theme_color', themeHex);
-  localStorage.setItem('lm_theme_glow', glowRgba);
+export function applyFullTheme(theme) {
+  const root = document.documentElement;
+  root.style.setProperty('--bg-core', theme.bgCore);
+  root.style.setProperty('--bg-surface', theme.bgSurface);
+  root.style.setProperty('--bg-surface-elevated', theme.bgSurfaceElevated);
+  root.style.setProperty('--bg-glass', theme.bgGlass);
+  root.style.setProperty('--bg-glass-card', theme.bgGlassCard);
+  
+  root.style.setProperty('--cyan-primary', theme.accent);
+  root.style.setProperty('--cyan-glow', theme.glow);
+  root.style.setProperty('--cyan-dim', theme.accentSecondary);
+  
+  root.style.setProperty('--purple-primary', theme.accent);
+  root.style.setProperty('--purple-glow', theme.glow);
+  root.style.setProperty('--purple-dim', theme.accentSecondary);
+  
+  root.style.setProperty('--border-glass', theme.borderGlass);
+  root.style.setProperty('--border-glow', `0 0 20px ${theme.glow}`);
+  
+  localStorage.setItem('lm_active_theme_id', theme.id);
+}
+
+export function initializeTheme() {
+  const savedId = localStorage.getItem('lm_active_theme_id') || 'cyan';
+  const found = THEME_PRESETS.find(p => p.id === savedId) || THEME_PRESETS[0];
+  applyFullTheme(found);
 }
 
 export function SettingsModal({
@@ -37,11 +145,10 @@ export function SettingsModal({
   onClose,
   userProfile = {},
   onUpdateUserProfile,
-  onClearAllCalendarEvents,
-  onResetAllData
+  onClearAllCalendarEvents
 }) {
-  const [activeSubTab, setActiveSubTab] = useState('theme'); // 'theme', 'ai', 'profile', 'data'
-  const [currentColor, setCurrentColor] = useState(() => localStorage.getItem('lm_theme_color') || '#00f0ff');
+  const [activeSubTab, setActiveSubTab] = useState('theme');
+  const [activeThemeId, setActiveThemeId] = useState(() => localStorage.getItem('lm_active_theme_id') || 'cyan');
   const [apiKeyInput, setApiKeyInput] = useState(() => getStoredGeminiApiKey());
   const [saveStatus, setSaveStatus] = useState(null);
 
@@ -56,18 +163,18 @@ export function SettingsModal({
 
   if (!isOpen) return null;
 
-  const handleSelectTheme = (preset) => {
-    setCurrentColor(preset.hex);
-    applyThemeColor(preset.hex, preset.glow);
-    setSaveStatus('✨ 테마 색상이 즉시 적용되었습니다!');
-    setTimeout(() => setSaveStatus(null), 2000);
+  const handleSelectTheme = (theme) => {
+    setActiveThemeId(theme.id);
+    applyFullTheme(theme);
+    setSaveStatus(`✨ '${theme.name}' 풀 시스템 테마(배경+글로우)가 적용되었습니다!`);
+    setTimeout(() => setSaveStatus(null), 2500);
   };
 
   const handleSaveApiKey = () => {
     const trimmed = apiKeyInput.trim();
     saveStoredGeminiApiKey(trimmed);
-    setSaveStatus('✨ Gemini API 키가 저장되었습니다!');
-    setTimeout(() => setSaveStatus(null), 2000);
+    setSaveStatus('✨ Gemini API 키가 브라우저 보안 저장소에 저장되었습니다.');
+    setTimeout(() => setSaveStatus(null), 2500);
   };
 
   const handleSaveProfile = () => {
@@ -78,216 +185,284 @@ export function SettingsModal({
         fixedCosts: Number(fixedCosts)
       });
     }
-    setSaveStatus('✨ 사용자 재무 정보가 업데이트되었습니다!');
-    setTimeout(() => setSaveStatus(null), 2000);
+    setSaveStatus('✨ 월 소득 및 고정비 설정이 업데이트되었습니다.');
+    setTimeout(() => setSaveStatus(null), 2500);
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content settings-modal glass-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '640px' }}>
-        {/* Header */}
-        <div className="modal-header-row">
-          <div className="panel-title-with-icon">
-            <div className="cal-icon-glow" style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.3))' }}>
-              <Settings size={20} className="text-cyan" />
+    <div className="modal-overlay" onClick={onClose} style={{ backdropFilter: 'blur(24px)', backgroundColor: 'rgba(0, 0, 0, 0.78)' }}>
+      <div 
+        className="modal-content heavy-settings-dialog" 
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Top Header Bar */}
+        <div className="settings-header-banner">
+          <div className="flex items-center gap-3">
+            <div className="settings-icon-badge">
+              <Cpu size={22} className="text-cyan" />
             </div>
             <div>
-              <h4>L&M OS 시스템 설정</h4>
-              <p className="text-muted text-xs">
-                테마 색상, Gemini AI 엔진, 재무 프로필 및 시스템 데이터를 관리합니다.
+              <div className="flex items-center gap-2">
+                <h3 className="settings-main-title">L&M OS Executive Settings</h3>
+                <span className="settings-sys-tag">KERNEL v2.6</span>
+              </div>
+              <p className="settings-sub-title">
+                전체 배경 톤 & 네온 테마, Gemini 2.0 AI 인텔리전스, 재무 매크로 프로필 관리
               </p>
             </div>
           </div>
-          <button className="btn-icon" onClick={onClose}><X size={18} /></button>
+          <button 
+            type="button" 
+            className="settings-close-btn"
+            onClick={onClose}
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Sub Tabs */}
-        <div className="modal-subtabs-row flex gap-2 border-b border-white/10 pb-2.5 mt-2">
+        {/* Heavy Navigation Switcher Tabs */}
+        <div className="settings-nav-bar">
           <button 
             type="button" 
-            className={`btn btn-xs ${activeSubTab === 'theme' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`settings-tab-btn ${activeSubTab === 'theme' ? 'active' : ''}`}
             onClick={() => setActiveSubTab('theme')}
           >
-            <Palette size={13} />
-            <span>🎨 테마 색상</span>
+            <Palette size={15} />
+            <span>🎨 배경 & 네온 테마</span>
           </button>
           <button 
             type="button" 
-            className={`btn btn-xs ${activeSubTab === 'ai' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`settings-tab-btn ${activeSubTab === 'ai' ? 'active' : ''}`}
             onClick={() => setActiveSubTab('ai')}
           >
-            <Key size={13} />
-            <span>🤖 Gemini AI 키</span>
+            <Key size={15} />
+            <span>🤖 Gemini AI 연동</span>
           </button>
           <button 
             type="button" 
-            className={`btn btn-xs ${activeSubTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`settings-tab-btn ${activeSubTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveSubTab('profile')}
           >
-            <DollarSign size={13} />
-            <span>💵 재무 & 프로필</span>
+            <DollarSign size={15} />
+            <span>💵 재무 & 소득 프로필</span>
           </button>
           <button 
             type="button" 
-            className={`btn btn-xs ${activeSubTab === 'data' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`settings-tab-btn ${activeSubTab === 'data' ? 'active' : ''}`}
             onClick={() => setActiveSubTab('data')}
           >
-            <Trash2 size={13} />
+            <Trash2 size={15} />
             <span>🧹 데이터 관리</span>
           </button>
         </div>
 
-        {/* Tab 1: Theme Colors */}
-        {activeSubTab === 'theme' && (
-          <div className="theme-settings-pane mt-4 space-y-3">
-            <h5 className="text-xs font-bold text-highlight">메인 악센트 & 네온 테마 선택</h5>
-            <p className="text-2xs text-muted">선택하신 색상으로 전체 시스템의 네온 글로우, 버튼, 링크, 헤더 포인트가 즉시 변경됩니다.</p>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-3">
-              {THEME_COLOR_PRESETS.map(preset => {
-                const isSelected = currentColor.toLowerCase() === preset.hex.toLowerCase();
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={`theme-color-card p-3 rounded-lg border text-left flex items-center gap-3 transition-all ${
-                      isSelected ? 'border-cyan bg-white/10 shadow-lg' : 'border-white/10 bg-white/5 hover:border-white/20'
-                    }`}
-                    onClick={() => handleSelectTheme(preset)}
-                  >
-                    <div 
-                      className="w-7 h-7 rounded-full shadow-inner flex items-center justify-center shrink-0" 
-                      style={{ background: preset.hex, boxShadow: `0 0 10px ${preset.glow}` }}
-                    >
-                      {isSelected && <Check size={14} className="text-black font-bold" />}
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold block text-highlight">{preset.name}</span>
-                      <span className="text-2xs text-muted">{preset.desc}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: AI Settings */}
-        {activeSubTab === 'ai' && (
-          <div className="ai-settings-pane mt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h5 className="text-xs font-bold text-highlight">Google Gemini AI Engine 연동</h5>
-              <a 
-                href="https://aistudio.google.com/app/apikey" 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-cyan text-xs font-bold hover:underline inline-flex items-center gap-1"
-              >
-                무료 API 키 발급받기 <ExternalLink size={12} />
-              </a>
-            </div>
-
-            <div className="form-group">
-              <label className="text-2xs text-muted font-bold">Gemini API Key</label>
-              <div className="flex gap-2 mt-1">
-                <input
-                  type="password"
-                  className="input-text mono flex-1"
-                  placeholder="AIzaSy..."
-                  value={apiKeyInput}
-                  onChange={e => setApiKeyInput(e.target.value)}
-                />
-                <button type="button" className="btn btn-primary btn-sm" onClick={handleSaveApiKey}>
-                  저장
-                </button>
-              </div>
-              <span className="text-2xs text-faint block mt-1">
-                * 키는 브라우저 로컬 저장소에만 안전하게 보관되며, 플로팅 AI 어시스턴트 및 RAG 지식 비서의 두뇌로 동작합니다.
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Financial & Profile Settings */}
-        {activeSubTab === 'profile' && (
-          <div className="profile-settings-pane mt-4 space-y-3">
-            <h5 className="text-xs font-bold text-highlight">월 소득 & 고정 지출 설정</h5>
-            <p className="text-2xs text-muted">투자 가용 잉여금 자동 계산 및 자산 배분 인텔리전스의 기준값입니다.</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-              <div className="form-group">
-                <label className="text-2xs text-muted font-bold">월 총소득 (원)</label>
-                <input
-                  type="number"
-                  className="input-text mono mt-1"
-                  value={income}
-                  onChange={e => setIncome(e.target.value)}
-                  step="100000"
-                />
-                <span className="text-2xs text-cyan block mt-1">{(Number(income) / 10000).toLocaleString()} 만원</span>
-              </div>
-
-              <div className="form-group">
-                <label className="text-2xs text-muted font-bold">월 고정비 (원)</label>
-                <input
-                  type="number"
-                  className="input-text mono mt-1"
-                  value={fixedCosts}
-                  onChange={e => setFixedCosts(e.target.value)}
-                  step="50000"
-                />
-                <span className="text-2xs text-rose block mt-1">{(Number(fixedCosts) / 10000).toLocaleString()} 만원</span>
-              </div>
-            </div>
-
-            <button type="button" className="btn btn-primary btn-sm mt-2" onClick={handleSaveProfile}>
-              재무 프로필 저장
-            </button>
-          </div>
-        )}
-
-        {/* Tab 4: Data Management */}
-        {activeSubTab === 'data' && (
-          <div className="data-settings-pane mt-4 space-y-3">
-            <h5 className="text-xs font-bold text-highlight">시스템 데이터 초기화 & 관리</h5>
-            <p className="text-2xs text-muted">테스트용으로 누적된 일정이나 데이터를 안전하게 초기화할 수 있습니다.</p>
-
-            <div className="flex flex-col gap-2 mt-3">
-              <div className="flex items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5">
+        {/* Body Content Container */}
+        <div className="settings-body-viewport">
+          {/* TAB 1: Full Theme & Background Palette */}
+          {activeSubTab === 'theme' && (
+            <div className="settings-pane-theme animate-fadeIn">
+              <div className="pane-section-header">
                 <div>
-                  <span className="text-xs font-bold text-highlight block">캘린더 전체 일정 비우기</span>
-                  <span className="text-2xs text-muted">등록된 모든 일정을 캘린더에서 깨끗하게 삭제합니다.</span>
+                  <h4 className="pane-heading">풀 시스템 테마 & 배경 톤 선택</h4>
+                  <p className="pane-desc">배경 화면, 헤더, 대시보드 카드, 네온 글로우, 버튼 색상이 일관되게 전체 전환됩니다.</p>
+                </div>
+              </div>
+
+              {/* 3x2 Grid Theme Palette Selector */}
+              <div className="theme-palette-grid">
+                {THEME_PRESETS.map(theme => {
+                  const isSelected = activeThemeId === theme.id;
+                  return (
+                    <div
+                      key={theme.id}
+                      className={`theme-card-box ${isSelected ? 'selected' : ''}`}
+                      onClick={() => handleSelectTheme(theme)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {/* Theme Visual Preview Header */}
+                      <div 
+                        className="theme-card-preview"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${theme.bgSurface}, ${theme.bgCore})`,
+                          borderColor: isSelected ? theme.accent : 'rgba(255, 255, 255, 0.1)'
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <span 
+                              className="theme-swatch-dot" 
+                              style={{ background: theme.accent, boxShadow: `0 0 12px ${theme.glow}` }}
+                            />
+                            <span className="theme-name-text">{theme.name}</span>
+                          </div>
+                          {isSelected && (
+                            <span className="theme-active-badge" style={{ background: theme.accent, color: '#000' }}>
+                              <Check size={11} className="font-extrabold" />
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Visual Mock Bars */}
+                        <div className="theme-mini-bars">
+                          <div className="mini-bar" style={{ background: theme.accent, width: '70%' }} />
+                          <div className="mini-bar-sub" style={{ background: theme.accentSecondary, width: '45%' }} />
+                        </div>
+                      </div>
+
+                      {/* Theme Description */}
+                      <div className="theme-card-meta">
+                        <span className="theme-kr-title font-bold text-highlight">{theme.koreanName}</span>
+                        <p className="theme-kr-desc text-muted">{theme.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: AI Settings */}
+          {activeSubTab === 'ai' && (
+            <div className="settings-pane-ai animate-fadeIn">
+              <div className="pane-section-header">
+                <div>
+                  <h4 className="pane-heading">Google Gemini 2.0 AI 연동</h4>
+                  <p className="pane-desc">자연어 일정 자동 생성, 실시간 일정 질의, 식단/가계부 분석의 핵심 두뇌입니다.</p>
+                </div>
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="btn btn-secondary btn-xs inline-flex items-center gap-1.5 text-cyan border-cyan/30"
+                >
+                  <span>Google AI Studio Key 발급</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+
+              <div className="settings-input-card">
+                <label className="input-card-label">Gemini API Key</label>
+                <div className="flex gap-2.5 mt-2">
+                  <input
+                    type="password"
+                    className="input-text mono flex-1"
+                    placeholder="AIzaSy..."
+                    value={apiKeyInput}
+                    onChange={e => setApiKeyInput(e.target.value)}
+                  />
+                  <button 
+                    type="button" 
+                    className="btn btn-primary btn-sm px-4" 
+                    onClick={handleSaveApiKey}
+                  >
+                    키 저장
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 text-2xs text-faint mt-2.5">
+                  <Lock size={12} className="text-cyan" />
+                  <span>입력하신 API 키는 브라우저 로컬 저장소(LocalStorage)에만 안전하게 보관됩니다.</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Financial Profile */}
+          {activeSubTab === 'profile' && (
+            <div className="settings-pane-profile animate-fadeIn">
+              <div className="pane-section-header">
+                <div>
+                  <h4 className="pane-heading">월 소득 & 고정 지출 프로필</h4>
+                  <p className="pane-desc">투자 가용 잉여금 자동 계산 및 자산 배분 전략의 기준값으로 활용됩니다.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="settings-input-card">
+                  <label className="input-card-label">월 총소득 (원)</label>
+                  <input
+                    type="number"
+                    className="input-text mono mt-2 text-base"
+                    value={income}
+                    onChange={e => setIncome(e.target.value)}
+                    step="100000"
+                  />
+                  <span className="text-xs text-cyan font-bold block mt-2">
+                    {(Number(income) / 10000).toLocaleString()} 만원
+                  </span>
+                </div>
+
+                <div className="settings-input-card">
+                  <label className="input-card-label">월 고정비 (원)</label>
+                  <input
+                    type="number"
+                    className="input-text mono mt-2 text-base"
+                    value={fixedCosts}
+                    onChange={e => setFixedCosts(e.target.value)}
+                    step="50000"
+                  />
+                  <span className="text-xs text-rose font-bold block mt-2">
+                    {(Number(fixedCosts) / 10000).toLocaleString()} 만원
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                type="button" 
+                className="btn btn-primary btn-sm mt-4 px-5"
+                onClick={handleSaveProfile}
+              >
+                재무 설정 저장
+              </button>
+            </div>
+          )}
+
+          {/* TAB 4: Data Management */}
+          {activeSubTab === 'data' && (
+            <div className="settings-pane-data animate-fadeIn">
+              <div className="pane-section-header">
+                <div>
+                  <h4 className="pane-heading">시스템 데이터 초기화 & 리셋</h4>
+                  <p className="pane-desc">테스트로 누적된 일정을 깨끗하게 비우거나 기본 상태로 리셋합니다.</p>
+                </div>
+              </div>
+
+              <div className="settings-action-panel">
+                <div>
+                  <h5 className="text-sm font-bold text-highlight">캘린더 전체 일정 비우기</h5>
+                  <p className="text-xs text-muted mt-0.5">등록된 모든 캘린더 일정을 삭제하여 초기 상태로 만듭니다.</p>
                 </div>
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm text-rose border-rose/30"
+                  className="btn btn-secondary btn-sm text-rose border-rose/30 hover:bg-rose/10"
                   onClick={() => {
                     if (window.confirm("등록된 모든 캘린더 일정을 정말로 삭제하시겠습니까?")) {
                       if (onClearAllCalendarEvents) onClearAllCalendarEvents();
-                      setSaveStatus('✨ 모든 일정이 초기화되었습니다.');
-                      setTimeout(() => setSaveStatus(null), 2000);
+                      setSaveStatus('✨ 모든 일정이 깨끗하게 초기화되었습니다.');
+                      setTimeout(() => setSaveStatus(null), 2500);
                     }
                   }}
                 >
-                  <Trash2 size={13} />
-                  <span>일정 비우기</span>
+                  <Trash2 size={14} />
+                  <span>전체 일정 비우기</span>
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Status Toast */}
+        {/* Dynamic Status Notification Toast */}
         {saveStatus && (
-          <div className="status-alert-box success mt-4 py-2 px-3 flex items-center gap-2">
-            <Sparkles size={14} className="text-emerald" />
+          <div className="settings-toast-banner">
+            <Sparkles size={15} className="text-emerald shrink-0" />
             <span className="text-xs text-emerald font-bold">{saveStatus}</span>
           </div>
         )}
 
-        {/* Footer */}
-        <div className="modal-actions-row mt-5">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
+        {/* Bottom Actions Footer */}
+        <div className="settings-footer-row">
+          <div className="text-2xs text-faint">L&M OS Executive Kernel Config</div>
+          <button type="button" className="btn btn-secondary btn-sm px-6" onClick={onClose}>
             닫기
           </button>
         </div>

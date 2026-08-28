@@ -30,7 +30,7 @@ import { DashboardCockpit } from './components/DashboardCockpit';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { GeminiApiKeyModal } from './components/GeminiApiKeyModal';
 import { FloatingAiAssistant } from './components/FloatingAiAssistant';
-import { SettingsModal, applyThemeColor } from './components/SettingsModal';
+import { SettingsModal, initializeTheme } from './components/SettingsModal';
 import { getStoredGeminiApiKey } from './services/geminiService';
 
 import { 
@@ -197,11 +197,7 @@ export function App() {
 
   // Initial Theme Initialization
   useEffect(() => {
-    const savedTheme = localStorage.getItem('lm_theme_color');
-    const savedGlow = localStorage.getItem('lm_theme_glow');
-    if (savedTheme && savedGlow) {
-      applyThemeColor(savedTheme, savedGlow);
-    }
+    initializeTheme();
   }, []);
 
   // Sync Loop & Echo Prevention Refs
