@@ -197,33 +197,38 @@ export function DailyRoutines({
 
   return (
     <div className="daily-routines-container">
-      {/* Ultra Compact Header Stat HUD */}
-      <div className="routine-summary-banner glass-card" style={{ padding: '10px 14px', marginBottom: '10px' }}>
-        <div className="flex items-center justify-between flex-wrap gap-2 w-full">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-highlight flex items-center gap-1.5">
-              ⚡ <span>일일 프로토콜</span>
-            </span>
-            <span className="badge badge-cyan text-xs">
-              {completedCount}/{totalCount} 완수 ({progressPercent}%)
-            </span>
-            <span className="badge badge-purple text-xs flex items-center gap-1">
-              <Zap size={11} className="text-amber" />
-              <span>+{totalEarnedXP} XP</span>
-            </span>
+      {/* Header Stat HUD */}
+      <div className="routine-summary-banner glass-card">
+        <div className="summary-left">
+          <div className="summary-title-row">
+            <h3>⚡ 일일 핵심 프로토콜 & 데일리 루틴</h3>
+            <span className="badge badge-cyan">{completedCount} / {totalCount} 완수 ({progressPercent}%)</span>
           </div>
+          <p className="text-muted text-xs">
+            각 루틴 체크 시 경험치(+XP)가 실시간 적립되며 Obsidian 데일리 노트와 자동 동기화됩니다.
+          </p>
 
-          <button className="btn btn-secondary btn-xs" onClick={onOpenObsidianModal}>
-            <FileText size={12} className="text-cyan" />
-            <span>Obsidian</span>
-          </button>
+          <div className="progress-bar-large">
+            <div 
+              className="progress-fill-emerald" 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
         </div>
 
-        <div className="progress-bar-large mt-2" style={{ height: '5px' }}>
-          <div 
-            className="progress-fill-emerald" 
-            style={{ width: `${progressPercent}%`, height: '100%' }}
-          ></div>
+        <div className="summary-right">
+          <div className="xp-earned-badge">
+            <Zap size={16} className="text-amber" />
+            <div>
+              <span className="xp-val mono">+{totalEarnedXP}</span>
+              <span className="xp-lbl">오늘 획득 XP</span>
+            </div>
+          </div>
+
+          <button className="btn btn-secondary btn-sm" onClick={onOpenObsidianModal}>
+            <FileText size={14} />
+            <span>Obsidian 연동</span>
+          </button>
         </div>
       </div>
 

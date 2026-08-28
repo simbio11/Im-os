@@ -275,143 +275,167 @@ export function CalendarScheduler({
 
   return (
     <div className="calendar-scheduler-container">
-      {/* Top Compact Banner: View Modes & Month Navigation */}
-      <div className="calendar-header-banner glass-card" style={{ padding: '12px 16px', marginBottom: '10px' }}>
-        <div className="cal-header-row flex items-center justify-between flex-wrap gap-2.5">
-          {/* Title & Today Badge */}
-          <div className="flex items-center gap-2">
-            <div className="cal-icon-glow" style={{ width: '32px', height: '32px', minWidth: '32px' }}>
-              <CalendarIcon size={16} className="text-cyan" />
+      {/* Top Banner: Calendar Navigation, View Mode Switcher, & Actions */}
+      <div className="calendar-header-banner glass-card">
+        <div className="cal-header-left">
+          <div className="panel-title-with-icon">
+            <div className="cal-icon-glow">
+              <CalendarIcon size={22} className="text-cyan" />
             </div>
-            <h3 className="text-base font-extrabold text-highlight" style={{ margin: 0 }}>캘린더</h3>
-            <button className="btn btn-secondary btn-xs px-2.5" onClick={handleGoToday}>
-              오늘
-            </button>
+            <div>
+              <div className="cal-title-row">
+                <h3>캘린더 & 일정 관리 프로토콜</h3>
+                <span className="badge badge-cyan ml-2">Real-time Schedule Hub</span>
+              </div>
+              <p className="text-muted text-xs">
+                딥워크 타임블록, 5km 러닝, 주식 어닝콜/FOMC 및 주요 업무 일정을 실시간 조율하고 Obsidian과 동기화합니다.
+              </p>
+            </div>
           </div>
+        </div>
 
-          {/* Month Navigation */}
-          <div className="month-navigation-box flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg border border-white/10">
-            <button className="btn-icon-micro" onClick={handlePrevMonth} title="이전 달" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-              <ChevronLeft size={16} />
-            </button>
-            <span className="current-month-label mono font-bold text-highlight text-xs px-1">
-              {currentYear}년 {monthNames[currentMonth]}
-            </span>
-            <button className="btn-icon-micro" onClick={handleNextMonth} title="다음 달" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
+        {/* Controls: View Switcher, Month Navigation & Add Button */}
+        <div className="cal-header-right">
           {/* View Switcher Pills */}
           <div className="cal-view-switcher">
             <button 
               className={`view-btn ${viewMode === 'month' ? 'active' : ''}`}
               onClick={() => setViewMode('month')}
+              title="월간 캘린더 그리드"
             >
-              <Grid size={13} />
+              <Grid size={14} />
               <span>월간</span>
             </button>
             <button 
               className={`view-btn ${viewMode === 'week' ? 'active' : ''}`}
               onClick={() => setViewMode('week')}
+              title="주간 타임블록 뷰"
             >
-              <Columns size={13} />
+              <Columns size={14} />
               <span>주간</span>
             </button>
             <button 
               className={`view-btn ${viewMode === 'day' ? 'active' : ''}`}
               onClick={() => setViewMode('day')}
+              title="일간 아젠다 뷰"
             >
-              <CheckSquare size={13} />
+              <CheckSquare size={14} />
               <span>일간</span>
             </button>
             <button 
               className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
               onClick={() => setViewMode('list')}
+              title="전체 일정 타임라인"
             >
-              <List size={13} />
-              <span>목록</span>
+              <List size={14} />
+              <span>전체 목록</span>
             </button>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Month Navigation */}
+          <div className="month-navigation-box">
+            <button className="btn-icon" onClick={handlePrevMonth} title="이전 달">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="current-month-label mono font-bold text-highlight">
+              {currentYear}년 {monthNames[currentMonth]}
+            </span>
+            <button className="btn-icon" onClick={handleNextMonth} title="다음 달">
+              <ChevronRight size={16} />
+            </button>
+            <button className="btn btn-secondary btn-sm" onClick={handleGoToday}>
+              오늘
+            </button>
+          </div>
+
+          {/* Obsidian Sync & Add Event Buttons */}
+          <div className="flex items-center gap-2">
             <button 
-              className="btn btn-primary btn-xs"
+              className="btn btn-primary btn-sm"
               style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.25))', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}
               onClick={() => setShowAiOptimizerModal(true)}
-              title="AI 일정 편집"
+              title="자연어로 일정을 일괄 등록하거나 시간을 자동 최적화합니다"
             >
-              <Sparkles size={13} />
-              <span>AI 편집</span>
+              <Sparkles size={14} className="animate-pulse" />
+              <span>✨ AI 일정 편집</span>
             </button>
 
             <button 
-              className="btn btn-secondary btn-xs"
+              className="btn btn-secondary btn-sm"
               onClick={onOpenObsidianModal}
-              title="옵시디언 싱크"
+              title="옵시디언 마크다운으로 일정 즉시 동기화"
             >
-              <FileText size={13} className="text-cyan" />
-              <span>싱크</span>
+              <FileText size={14} className="text-cyan" />
+              <span>옵시디언 싱크</span>
             </button>
 
             {events && events.length > 0 && onBulkUpdateEvents && (
               <button 
                 type="button"
-                className="btn btn-secondary btn-xs text-rose border-rose/30"
+                className="btn btn-secondary btn-sm text-rose hover:border-rose/40"
                 onClick={() => {
                   if (window.confirm("등록된 모든 일정을 캘린더에서 삭제하시겠습니까?")) {
                     onBulkUpdateEvents([]);
                   }
                 }}
-                title="일정 비우기"
+                title="캘린더의 모든 일정 초기화"
               >
-                <Trash2 size={12} />
-                <span>비우기</span>
+                <Trash2 size={13} className="text-rose" />
+                <span>일정 비우기</span>
               </button>
             )}
 
             <button 
-              className="btn btn-primary btn-xs"
+              className="btn btn-primary btn-sm"
               onClick={() => handleOpenAddModal(selectedDate)}
             >
-              <Plus size={13} />
-              <span>추가</span>
+              <Plus size={15} />
+              <span>일정 추가</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 1-Line Slim Horizontal Scroll Category Bar */}
-      <div className="cal-category-scroll-bar flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-        <button 
-          className={`cal-filter-pill ${selectedCategoryFilter === 'ALL' ? 'active' : ''}`}
-          onClick={() => setSelectedCategoryFilter('ALL')}
-          style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '4px 10px', fontSize: '11px' }}
-        >
-          전체 ({events.length})
-        </button>
-        {Object.entries(CALENDAR_CATEGORIES).map(([key, config]) => {
-          const count = events.filter(e => e.category === key).length;
-          return (
-            <button
-              key={key}
-              className={`cal-filter-pill ${selectedCategoryFilter === key ? 'active' : ''}`}
-              onClick={() => setSelectedCategoryFilter(key)}
-              style={{
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-                padding: '4px 10px',
-                fontSize: '11px',
-                borderColor: selectedCategoryFilter === key ? config.color : undefined,
-                color: selectedCategoryFilter === key ? config.color : undefined
-              }}
-            >
-              {getCategoryIcon(key)}
-              <span>{config.label} ({count})</span>
-            </button>
-          );
-        })}
+      {/* Category Filter & Search Bar */}
+      <div className="cal-filter-toolbar glass-card mt-3">
+        <div className="cal-category-filters-row">
+          <span className="text-xs text-muted font-bold category-label-tag">카테고리:</span>
+          <button 
+            className={`cal-filter-pill ${selectedCategoryFilter === 'ALL' ? 'active' : ''}`}
+            onClick={() => setSelectedCategoryFilter('ALL')}
+          >
+            전체 ({events.length})
+          </button>
+          {Object.entries(CALENDAR_CATEGORIES).map(([key, config]) => {
+            const count = events.filter(e => e.category === key).length;
+            return (
+              <button
+                key={key}
+                className={`cal-filter-pill ${selectedCategoryFilter === key ? 'active' : ''}`}
+                onClick={() => setSelectedCategoryFilter(key)}
+                style={{
+                  borderColor: selectedCategoryFilter === key ? config.color : undefined,
+                  color: selectedCategoryFilter === key ? config.color : undefined
+                }}
+              >
+                {getCategoryIcon(key)}
+                <span>{config.label} ({count})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Quick Search */}
+        <div className="cal-search-input-wrapper">
+          <Search size={14} className="search-icon text-muted" />
+          <input
+            type="text"
+            className="input-text cal-search-input"
+            placeholder="일정 검색 (예: 어닝콜, 러닝, 딥워크)..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* VIEW 1: MONTH GRID VIEW */}
