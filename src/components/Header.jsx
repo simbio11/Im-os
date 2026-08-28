@@ -38,6 +38,7 @@ export function Header({
   currentTrack
 }) {
   const [kstTime, setKstTime] = useState('');
+  const [kstDate, setKstDate] = useState('');
   const [estTime, setEstTime] = useState('');
   const [isNyseOpen, setIsNyseOpen] = useState(false);
 
@@ -54,6 +55,15 @@ export function Header({
         hour12: false 
       });
       setKstTime(kstStr);
+
+      const kstDateFormatted = now.toLocaleDateString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short'
+      });
+      setKstDate(kstDateFormatted);
 
       // EST / EDT (New York: America/New_York)
       const estStr = now.toLocaleTimeString('en-US', { 
@@ -95,7 +105,10 @@ export function Header({
         {/* Dual Market Clocks HUD */}
         <div className="market-clocks-hud">
           <div className="clock-badge">
-            <span className="clock-label">🇰🇷 SEOUL (KST)</span>
+            <div className="flex items-center gap-1.5">
+              <span className="clock-label">🇰🇷 SEOUL (KST)</span>
+              <span className="text-2xs font-semibold text-cyan mono">{kstDate}</span>
+            </div>
             <span className="clock-time mono">{kstTime}</span>
           </div>
           <div className="clock-badge">

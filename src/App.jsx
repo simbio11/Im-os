@@ -446,6 +446,11 @@ export function App() {
     setCalendarEvents(prev => prev.filter(e => e.id !== id));
   };
 
+  const handleBulkUpdateCalendarEvents = (updatedAllEvents) => {
+    setCalendarEvents(updatedAllEvents);
+    awardXP(30, "AI 일정 자동 일괄 편집 및 최적화");
+  };
+
   // Deepwork Completion
   const handleCompleteDeepwork = (durationMin) => {
     awardXP(50, `${durationMin}분 딥워크 완수`);
@@ -500,6 +505,7 @@ export function App() {
               calendarEvents={calendarEvents}
               onToggleCalendarEvent={handleToggleCalendarEvent}
               onAddCalendarEvent={handleAddCalendarEvent}
+              onBulkUpdateCalendarEvents={handleBulkUpdateCalendarEvents}
               routines={routines}
               onToggleRoutine={handleToggleRoutine}
               onAddRoutine={handleAddRoutine}
@@ -605,6 +611,7 @@ export function App() {
               onToggleEvent={handleToggleCalendarEvent}
               onEditEvent={handleEditCalendarEvent}
               onDeleteEvent={handleDeleteCalendarEvent}
+              onBulkUpdateEvents={handleBulkUpdateCalendarEvents}
               onOpenObsidianModal={() => setObsidianModalOpen(true)}
             />
           </div>

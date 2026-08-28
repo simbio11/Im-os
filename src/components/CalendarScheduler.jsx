@@ -24,9 +24,12 @@ import {
   Edit2,
   Search,
   CheckSquare,
-  Copy
+  Copy,
+  Wand2
 } from 'lucide-react';
 import { CALENDAR_CATEGORIES } from '../data/calendarEvents';
+import { getTodayDateStr, getRelativeDateStr, formatKoreanDate, formatShortKoreanDate, isDateToday } from '../utils/dateUtils';
+import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
 
 export function CalendarScheduler({ 
   events, 
@@ -34,24 +37,30 @@ export function CalendarScheduler({
   onToggleEvent, 
   onEditEvent,
   onDeleteEvent,
-  onOpenObsidianModal 
+  onBulkUpdateEvents,
+  onOpenObsidianModal,
+  geminiApiKey = null
 }) {
+  const now = new Date();
+  const todayStr = getTodayDateStr();
+
   // Calendar Navigation State
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonth, setCurrentMonth] = useState(7); // 0-indexed: 7 = August
-  const [selectedDate, setSelectedDate] = useState("2026-08-26");
+  const [currentYear, setCurrentYear] = useState(now.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth()); // 0-indexed
+  const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("ALL");
   const [viewMode, setViewMode] = useState("month"); // "month", "week", "day", "list"
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Modal State for Add / Edit / Duplicate
+  // Modal State for Add / Edit / Duplicate / AI Optimizer
   const [showModal, setShowModal] = useState(false);
+  const [showAiOptimizerModal, setShowAiOptimizerModal] = useState(false);
   const [editingEventId, setEditingEventId] = useState(null);
   const [isDuplicateMode, setIsDuplicateMode] = useState(false);
 
   // Form State
   const [formTitle, setFormTitle] = useState('');
-  const [formDate, setFormDate] = useState('2026-08-26');
+  const [formDate, setFormDate] = useState(todayStr);
   const [formStartTime, setFormStartTime] = useState('14:00');
   const [formEndTime, setFormEndTime] = useState('15:00');
   const [formCategory, setFormCategory] = useState('deepwork');
@@ -78,9 +87,10 @@ export function CalendarScheduler({
   };
 
   const handleGoToday = () => {
-    setCurrentYear(2026);
-    setCurrentMonth(7);
-    setSelectedDate("2026-08-26");
+    const freshNow = new Date();
+    setCurrentYear(freshNow.getFullYear());
+    setCurrentMonth(freshNow.getMonth());
+    setSelectedDate(getTodayDateStr());
   };
 
   // Open Add Modal
@@ -217,7 +227,7 @@ export function CalendarScheduler({
       dateStr,
       dayNum: d.getDate(),
       dayName: ['일', '월', '화', '수', '목', '금', '토'][i],
-      isToday: dateStr === "2026-08-26",
+      isToday: isDateToday(dateStr),
       isSelected: dateStr === selectedDate
     });
   }
@@ -331,6 +341,16 @@ export function CalendarScheduler({
           {/* Obsidian Sync & Add Event Buttons */}
           <div className="flex items-center gap-2">
             <button 
+              className="btn btn-primary btn-sm"
+              style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.25))', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}
+              onClick={() => setShowAiOptimizerModal(true)}
+              title="자연어로 일정을 일괄 등록하거나 시간을 자동 최적화합니다"
+            >
+              <Sparkles size={14} className="animate-pulse" />
+              <span>✨ AI 일정 편집</span>
+            </button>
+
+            <button 
               className="btn btn-secondary btn-sm"
               onClick={onOpenObsidianModal}
               title="옵시디언 마크다운으로 일정 즉시 동기화"
@@ -409,7 +429,7 @@ export function CalendarScheduler({
               {calendarDays.map((cell, idx) => {
                 const dayEvents = filteredEvents.filter(e => e.date === cell.dateStr);
                 const isSelected = cell.dateStr === selectedDate;
-                const isToday = cell.dateStr === "2026-08-26";
+                const isToday = isDateToday(cell.dateStr);
                 const isWeekend = idx % 7 === 0 || idx % 7 === 6;
 
                 return (
@@ -903,9 +923,9 @@ export function CalendarScheduler({
                 <div className="date-field-header">
                   <label className="text-xs text-muted">날짜 (YYYY-MM-DD)</label>
                   <div className="date-preset-pills">
-                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate('2026-08-26')}>오늘(8/26)</button>
-                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate('2026-08-27')}>내일(8/27)</button>
-                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate('2026-08-28')}>모레(8/28)</button>
+                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate(getTodayDateStr())}>오늘 ({getTodayDateStr().slice(5)})</button>
+                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate(getRelativeDateStr(1))}>내일 ({getRelativeDateStr(1).slice(5)})</button>
+                    <button type="button" className="btn-preset-chip" onClick={() => setFormDate(getRelativeDateStr(2))}>모레 ({getRelativeDateStr(2).slice(5)})</button>
                     <button type="button" className="btn-preset-chip" onClick={() => handleShiftDate(7)}>+7일 뒤</button>
                     <button type="button" className="btn-preset-chip" onClick={() => handleShiftDate(14)}>+14일 뒤</button>
                   </div>
@@ -1006,6 +1026,19 @@ export function CalendarScheduler({
           </div>
         </div>
       )}
+      {/* AI Schedule Optimizer Modal */}
+      <AiScheduleOptimizerModal
+        isOpen={showAiOptimizerModal}
+        onClose={() => setShowAiOptimizerModal(false)}
+        currentEvents={events}
+        onApplyOptimizedEvents={(updatedEvents) => {
+          if (onBulkUpdateEvents) {
+            onBulkUpdateEvents(updatedEvents);
+          }
+        }}
+        defaultTargetDate={selectedDate}
+        apiKey={geminiApiKey}
+      />
     </div>
   );
 }

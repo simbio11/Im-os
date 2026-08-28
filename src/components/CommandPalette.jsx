@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Command, Utensils, CreditCard, Activity, Search, X, Sparkles, Plus, ArrowRight } from 'lucide-react';
+import { Command, Utensils, CreditCard, Activity, Search, X, Sparkles, Plus, ArrowRight, Calendar } from 'lucide-react';
 import { parseFoodNaturalLanguage } from '../data/nutritionDb';
 import { parseExpenseNaturalLanguage } from '../utils/nlpParsers';
+import { parseSingleScheduleLine } from '../utils/aiScheduleOptimizer';
+import { getTodayDateStr } from '../utils/dateUtils';
 
 export function CommandPalette({ isOpen, onClose, onAddDiet, onAddExpense, onAddRun, onAddEvent, onSearchRAG }) {
   const [input, setInput] = useState('');
@@ -41,22 +43,15 @@ export function CommandPalette({ isOpen, onClose, onAddDiet, onAddExpense, onAdd
     const trimmed = input.trim();
 
     // Check if it's an event/schedule format (e.g. "일정 14:00 투자 미팅", "스케줄 8/28 엔비디아 어닝콜")
-    if (trimmed.startsWith('일정') || trimmed.startsWith('스케줄') || trimmed.includes('미팅') || trimmed.includes('어닝콜')) {
-      const cleanTitle = trimmed.replace(/^(일정|스케줄)\s*/, '');
-      const timeMatch = trimmed.match(/(\d{1,2}:\d{2})/);
-      const startTime = timeMatch ? timeMatch[1] : '14:00';
-      setPreviewResult({
-        type: 'event',
-        data: {
-          title: cleanTitle || trimmed,
-          date: '2026-08-26',
-          startTime,
-          endTime: '15:00',
-          category: trimmed.includes('미팅') ? 'meeting' : trimmed.includes('어닝콜') ? 'market' : 'deepwork',
-          location: '온라인/홈오피스'
-        }
-      });
-      return;
+    if (trimmed.startsWith('일정') || trimmed.startsWith('스케줄') || trimmed.includes('미팅') || trimmed.includes('어닝콜') || trimmed.includes('회의')) {
+      const parsedEvt = parseSingleScheduleLine(trimmed, getTodayDateStr());
+      if (parsedEvt) {
+        setPreviewResult({
+          type: 'event',
+          data: parsedEvt
+        });
+        return;
+      }
     }
 
     // Check if it's an expense format (contains '원' or numbers or card pattern)

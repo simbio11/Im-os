@@ -17,20 +17,27 @@ import {
   Check,
   ListTodo,
   Grid,
-  FileText
+  FileText,
+  Sparkles
 } from 'lucide-react';
 import { CALENDAR_CATEGORIES } from '../data/calendarEvents';
+import { getTodayDateStr, formatKoreanDate, formatShortKoreanDate } from '../utils/dateUtils';
+import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
 
 export function DashboardCalendarWidget({ 
   events, 
   onToggleEvent, 
   onAddEvent, 
+  onBulkUpdateEvents,
   onGoToCalendar,
-  onOpenObsidianModal 
+  onOpenObsidianModal,
+  geminiApiKey = null
 }) {
-  const todayDateStr = "2026-08-26";
+  const now = new Date();
+  const todayDateStr = getTodayDateStr();
   const [activeViewMode, setActiveViewMode] = useState('today'); // 'today' or 'month'
   const [selectedDate, setSelectedDate] = useState(todayDateStr);
+  const [showAiOptimizerModal, setShowAiOptimizerModal] = useState(false);
 
   const todayEvents = events.filter(e => e.date === todayDateStr);
   const completedCount = todayEvents.filter(e => e.completed).length;
@@ -78,29 +85,33 @@ export function DashboardCalendarWidget({
     }
   };
 
-  // Mini Month Grid Calculation for August 2026
-  const year = 2026;
-  const month = 7; // August (0-indexed)
-  const firstDayIndex = new Date(year, month, 1).getDay(); // Saturday = 6
-  const totalDays = new Date(year, month + 1, 0).getDate(); // 31
-  const prevMonthTotalDays = new Date(year, month, 0).getDate(); // 31
+  // Mini Month Grid Calculation (Dynamic Current Month)
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+  const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const prevMonthTotalDays = new Date(currentYear, currentMonth, 0).getDate();
 
   const miniDays = [];
   // Prev month padding
   for (let i = firstDayIndex - 1; i >= 0; i--) {
     const d = prevMonthTotalDays - i;
-    const dateStr = `2026-07-${String(d).padStart(2, '0')}`;
+    const prevM = currentMonth === 0 ? 12 : currentMonth;
+    const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const dateStr = `${prevY}-${String(prevM).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     miniDays.push({ day: d, isCurrentMonth: false, dateStr });
   }
   // Current month days
   for (let d = 1; d <= totalDays; d++) {
-    const dateStr = `2026-08-${String(d).padStart(2, '0')}`;
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     miniDays.push({ day: d, isCurrentMonth: true, dateStr });
   }
   // Next month padding
   const remaining = 35 - miniDays.length;
   for (let d = 1; d <= (remaining > 0 ? remaining : 42 - miniDays.length); d++) {
-    const dateStr = `2026-09-${String(d).padStart(2, '0')}`;
+    const nextM = currentMonth === 11 ? 1 : currentMonth + 2;
+    const nextY = currentMonth === 11 ? currentYear + 1 : currentYear;
+    const dateStr = `${nextY}-${String(nextM).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     miniDays.push({ day: d, isCurrentMonth: false, dateStr });
   }
 
@@ -117,12 +128,12 @@ export function DashboardCalendarWidget({
           <div>
             <div className="widget-header-title">
               <h4>핵심 일정 & 캘린더</h4>
-              <span className="badge badge-cyan ml-2">2026. 08월</span>
+              <span className="badge badge-cyan ml-2">{currentYear}. {String(currentMonth + 1).padStart(2, '0')}월</span>
             </div>
             <p className="text-muted text-xs">
               {activeViewMode === 'today' 
                 ? `오늘 일정 ${todayEvents.length}건 중 ${completedCount}건 완수 (${progressPercent}%)`
-                : `8월 전체 일정 ${events.length}건 등록됨 (클릭하여 날짜별 확인)`}
+                : `${currentMonth + 1}월 전체 일정 ${events.length}건 등록됨 (클릭하여 날짜별 확인)`}
             </p>
           </div>
         </div>
@@ -147,6 +158,16 @@ export function DashboardCalendarWidget({
               <span>한달 요약</span>
             </button>
           </div>
+
+          <button 
+            className="btn btn-primary btn-xs"
+            style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.25))', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}
+            onClick={() => setShowAiOptimizerModal(true)}
+            title="자연어로 일정을 일괄 등록하거나 시간을 자동 최적화합니다"
+          >
+            <Sparkles size={11} className="animate-pulse" />
+            <span>✨ AI 편집</span>
+          </button>
 
           <button 
             className="btn btn-secondary btn-sm"
@@ -348,6 +369,19 @@ export function DashboardCalendarWidget({
           </div>
         </div>
       )}
+      {/* AI Schedule Optimizer Modal */}
+      <AiScheduleOptimizerModal
+        isOpen={showAiOptimizerModal}
+        onClose={() => setShowAiOptimizerModal(false)}
+        currentEvents={events}
+        onApplyOptimizedEvents={(updatedEvents) => {
+          if (onBulkUpdateEvents) {
+            onBulkUpdateEvents(updatedEvents);
+          }
+        }}
+        defaultTargetDate={selectedDate}
+        apiKey={geminiApiKey}
+      />
     </div>
   );
 }

@@ -22,36 +22,43 @@ import {
   Building2,
   FileSpreadsheet,
   Globe2,
-  ArrowUpRight
+  ArrowUpRight,
+  Wand2
 } from 'lucide-react';
 import { PUBMED_PAPERS_DB } from '../data/pubmedDatabase';
 import { KOREA_STOCKS_CORP_MAP, DART_DISCLOSURES_CACHE, DART_API_KEY } from '../services/dartService';
+import { getTodayDateStr, formatKoreanDate, formatShortKoreanDate } from '../utils/dateUtils';
+import { AiScheduleOptimizerModal } from './AiScheduleOptimizerModal';
 
 export function DashboardCockpit({
   calendarEvents = [],
   onToggleCalendarEvent,
   onAddCalendarEvent,
+  onBulkUpdateCalendarEvents,
   routines = [],
   onToggleRoutine,
   onAddRoutine,
   dietLogs = [],
   userProfile = {},
   onNavigateTab,
-  onOpenObsidianModal
+  onOpenObsidianModal,
+  geminiApiKey = null
 }) {
   // -------------------------------------------------------------
-  // 1. Calendar Mini Grid & Selected Day State
+  // 1. Calendar Mini Grid & Selected Day State (Dynamic Real-time Date)
   // -------------------------------------------------------------
-  const todayDateStr = "2026-08-26";
+  const now = new Date();
+  const todayDateStr = getTodayDateStr();
   const [selectedDate, setSelectedDate] = useState(todayDateStr);
   const [showQuickEventModal, setShowQuickEventModal] = useState(false);
+  const [showAiOptimizerModal, setShowAiOptimizerModal] = useState(false);
   const [quickEventTitle, setQuickEventTitle] = useState('');
   const [quickEventTime, setQuickEventTime] = useState('09:00 - 10:00');
 
-  // Month navigation calculation (August 2026 default)
+  // Month navigation calculation (Current Month default)
   const [currentMonthOffset, setCurrentMonthOffset] = useState(0);
-  const baseYear = 2026;
-  const baseMonth = 7; // August (0-indexed)
+  const baseYear = now.getFullYear();
+  const baseMonth = now.getMonth(); // 0-indexed
 
   const displayedDate = new Date(baseYear, baseMonth + currentMonthOffset, 1);
   const dispYear = displayedDate.getFullYear();
@@ -215,6 +222,16 @@ export function DashboardCockpit({
                 <ChevronRight size={14} />
               </button>
             </div>
+
+            <button 
+              className="btn btn-primary btn-xs ml-1"
+              style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.25))', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}
+              onClick={() => setShowAiOptimizerModal(true)}
+              title="자연어로 일정을 일괄 등록하거나 시간을 자동 최적화합니다"
+            >
+              <Sparkles size={11} className="animate-pulse" />
+              <span>✨ AI 일정 편집</span>
+            </button>
 
             <button 
               className="btn btn-secondary btn-xs ml-1"
@@ -804,6 +821,19 @@ export function DashboardCockpit({
           </div>
         </div>
       </div>
+      {/* AI Schedule Optimizer Modal */}
+      <AiScheduleOptimizerModal
+        isOpen={showAiOptimizerModal}
+        onClose={() => setShowAiOptimizerModal(false)}
+        currentEvents={calendarEvents}
+        onApplyOptimizedEvents={(updatedEvents) => {
+          if (onBulkUpdateCalendarEvents) {
+            onBulkUpdateCalendarEvents(updatedEvents);
+          }
+        }}
+        defaultTargetDate={selectedDate}
+        apiKey={geminiApiKey}
+      />
     </div>
   );
 }

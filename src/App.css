@@ -6201,6 +6201,231 @@
   line-height: 1.4;
 }
 
+/* ==========================================================================
+   14. AI Schedule Optimizer & Bulk Copilot Styles
+   ========================================================================== */
+.ai-optimizer-modal {
+  max-width: 680px;
+  width: 95%;
+  background: rgba(13, 17, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.15), 0 20px 40px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-icon-glow {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.25));
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px var(--cyan-glow);
+}
+
+.ai-target-date-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.date-pill-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.date-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-highlight);
+}
+
+.date-pill.active {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--cyan-primary);
+  color: var(--cyan-primary);
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.ai-preset-chips-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chip-btn-ai {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-btn-ai:hover {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.4);
+  color: var(--cyan-primary);
+  transform: translateX(3px);
+}
+
+.ai-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-textarea {
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--text-highlight);
+  resize: vertical;
+}
+
+.ai-textarea:focus {
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 15px var(--cyan-glow);
+  outline: none;
+}
+
+.ai-input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ai-result-preview-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.ai-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 10px;
+}
+
+.ai-preview-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.preview-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.preview-event-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-event-card.new {
+  border-left: 3px solid var(--emerald-primary);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.preview-event-card.modified {
+  border-left: 3px solid var(--amber-primary);
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.ai-apply-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .ai-optimizer-modal {
+    width: 96%;
+    padding: 16px;
+    gap: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .ai-target-date-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .date-pill-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .preview-chips-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-apply-footer {
+    flex-direction: column;
+  }
+  
+  .ai-apply-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+
 
 
 
