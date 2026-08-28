@@ -237,7 +237,7 @@ export function DashboardCockpit({
         {/* Header */}
         <div className="cockpit-card-header">
           <div className="cockpit-title-group" onClick={() => onNavigateTab('calendar')} title="캘린더 전체 화면으로 이동">
-            <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
+            <div className="cockpit-icon-badge" style={{ background: 'var(--cyan-glow)', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}>
               <CalendarDays size={15} />
             </div>
             <h4>캘린더 <span className="text-muted text-xs font-normal">(Calendar)</span></h4>
@@ -437,7 +437,7 @@ export function DashboardCockpit({
         {/* Header */}
         <div className="cockpit-card-header">
           <div className="cockpit-title-group" onClick={() => onNavigateTab('life')} title="생활관리 전체 화면으로 이동">
-            <div className="cockpit-icon-badge" style={{ background: 'rgba(0, 240, 255, 0.1)', borderColor: 'rgba(0, 240, 255, 0.3)', color: 'var(--cyan-primary)' }}>
+            <div className="cockpit-icon-badge" style={{ background: 'var(--cyan-glow)', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}>
               <Activity size={15} />
             </div>
             <h4>생활관리 <span className="text-muted text-xs font-normal">(Life Management)</span></h4>
@@ -595,7 +595,7 @@ export function DashboardCockpit({
         {/* Header */}
         <div className="cockpit-card-header">
           <div className="cockpit-title-group" onClick={() => onNavigateTab('market')} title="주식 & 마켓 전체 화면으로 이동">
-            <div className="cockpit-icon-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: 'var(--emerald-primary)' }}>
+            <div className="cockpit-icon-badge" style={{ background: 'var(--cyan-glow)', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}>
               <TrendingUp size={15} />
             </div>
             <h4>주식 <span className="text-muted text-xs font-normal">(Stocks) & DART 공시</span></h4>
@@ -774,7 +774,7 @@ export function DashboardCockpit({
         {/* Header */}
         <div className="cockpit-card-header">
           <div className="cockpit-title-group" onClick={() => onNavigateTab('knowledge')} title="PubMed 논문 허브로 이동">
-            <div className="cockpit-icon-badge" style={{ background: 'rgba(168, 85, 247, 0.12)', borderColor: 'rgba(168, 85, 247, 0.3)', color: 'var(--purple-primary)' }}>
+            <div className="cockpit-icon-badge" style={{ background: 'var(--cyan-glow)', borderColor: 'var(--cyan-primary)', color: 'var(--cyan-primary)' }}>
               <BookOpenCheck size={15} />
             </div>
             <h4>PubMed 논문 <span className="text-muted text-xs font-normal">& 리서치</span></h4>
