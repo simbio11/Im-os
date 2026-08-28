@@ -23,17 +23,17 @@ export const THEME_PRESETS = [
   { 
     id: 'cyan', 
     name: 'Cyber Cyan', 
-    koreanName: '사이버 네온 시안',
+    koreanName: '사이버 틸 시안',
     bgCore: '#070b14',
     bgSurface: '#0d1527',
     bgSurfaceElevated: '#121d36',
     bgGlass: 'rgba(13, 21, 39, 0.82)',
     bgGlassCard: 'rgba(18, 29, 54, 0.68)',
-    accent: '#00f0ff', 
+    accent: '#06b6d4', 
     accentSecondary: '#38bdf8',
-    glow: 'rgba(0, 240, 255, 0.4)',
-    borderGlass: 'rgba(0, 240, 255, 0.22)',
-    desc: '미래지향적 사이버펑크 네온 블루 테마' 
+    glow: 'rgba(6, 182, 212, 0.22)',
+    borderGlass: 'rgba(6, 182, 212, 0.2)',
+    desc: '세련되고 차분한 딥 틸 & 아이스 블루' 
   },
   { 
     id: 'purple', 
@@ -44,11 +44,11 @@ export const THEME_PRESETS = [
     bgSurfaceElevated: '#1b1a29',
     bgGlass: 'rgba(20, 20, 31, 0.82)',
     bgGlassCard: 'rgba(27, 26, 41, 0.68)',
-    accent: '#a855f7', 
-    accentSecondary: '#c084fc',
-    glow: 'rgba(168, 85, 247, 0.42)',
-    borderGlass: 'rgba(168, 85, 247, 0.24)',
-    desc: '몰입형 딥워크 & 옵시디언 다크 테마' 
+    accent: '#8b5cf6', 
+    accentSecondary: '#a78bfa',
+    glow: 'rgba(139, 92, 246, 0.22)',
+    borderGlass: 'rgba(139, 92, 246, 0.2)',
+    desc: '몰입형 딥워크 & 은은한 라벤더 바이올렛' 
   },
   { 
     id: 'emerald', 
@@ -61,9 +61,9 @@ export const THEME_PRESETS = [
     bgGlassCard: 'rgba(15, 41, 30, 0.68)',
     accent: '#10b981', 
     accentSecondary: '#34d399',
-    glow: 'rgba(16, 185, 129, 0.42)',
-    borderGlass: 'rgba(16, 185, 129, 0.24)',
-    desc: '바이탈 에너지 & 피트니스 에메랄드 테마' 
+    glow: 'rgba(16, 185, 129, 0.22)',
+    borderGlass: 'rgba(16, 185, 129, 0.2)',
+    desc: '눈이 편안한 세이지 & 바이탈 에메랄드' 
   },
   { 
     id: 'rose', 
@@ -74,11 +74,11 @@ export const THEME_PRESETS = [
     bgSurfaceElevated: '#281118',
     bgGlass: 'rgba(29, 12, 17, 0.82)',
     bgGlassCard: 'rgba(40, 17, 24, 0.68)',
-    accent: '#f43f5e', 
+    accent: '#e11d48', 
     accentSecondary: '#fb7185',
-    glow: 'rgba(244, 63, 94, 0.42)',
-    borderGlass: 'rgba(244, 63, 94, 0.24)',
-    desc: '묵직한 카리스마 & 집중 크림슨 레드 테마' 
+    glow: 'rgba(225, 29, 72, 0.22)',
+    borderGlass: 'rgba(225, 29, 72, 0.2)',
+    desc: '묵직한 카리스마 & 와인 루비 크림슨' 
   },
   { 
     id: 'amber', 
@@ -89,11 +89,11 @@ export const THEME_PRESETS = [
     bgSurfaceElevated: '#271f0f',
     bgGlass: 'rgba(28, 22, 10, 0.82)',
     bgGlassCard: 'rgba(39, 31, 15, 0.68)',
-    accent: '#f59e0b', 
-    accentSecondary: '#fbbf24',
-    glow: 'rgba(245, 158, 11, 0.42)',
-    borderGlass: 'rgba(245, 158, 11, 0.24)',
-    desc: '월스트리트 마켓 & 럭셔리 골든 앰버 테마' 
+    accent: '#d97706', 
+    accentSecondary: '#f59e0b',
+    glow: 'rgba(217, 119, 6, 0.22)',
+    borderGlass: 'rgba(217, 119, 6, 0.2)',
+    desc: '고급스러운 샴페인 앰버 & 럭셔리 골드' 
   },
   { 
     id: 'blue', 
@@ -104,11 +104,11 @@ export const THEME_PRESETS = [
     bgSurfaceElevated: '#101d33',
     bgGlass: 'rgba(11, 20, 36, 0.82)',
     bgGlassCard: 'rgba(16, 29, 51, 0.68)',
-    accent: '#3b82f6', 
+    accent: '#2563eb', 
     accentSecondary: '#60a5fa',
-    glow: 'rgba(59, 130, 246, 0.42)',
-    borderGlass: 'rgba(59, 130, 246, 0.24)',
-    desc: '심해 네이비 & 일렉트릭 사파이어 블루 테마' 
+    glow: 'rgba(37, 99, 235, 0.22)',
+    borderGlass: 'rgba(37, 99, 235, 0.2)',
+    desc: '깊이감 있는 심해 네이비 & 로열 사파이어' 
   }
 ];
 

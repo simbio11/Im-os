@@ -96,7 +96,7 @@ export function Header({
       {/* Top Main Navigation Bar */}
       <div className="header-top">
         <div className="header-brand">
-          <div className="brand-logo-glow" style={{ background: 'linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(168, 85, 247, 0.2))', border: '1px solid rgba(0, 240, 255, 0.4)' }}>
+          <div className="brand-logo-glow" style={{ background: 'var(--cyan-glow)', border: '1px solid var(--cyan-primary)' }}>
             <Zap size={20} className="text-cyan" />
           </div>
           <div>
